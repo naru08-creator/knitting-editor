@@ -179,31 +179,35 @@ async function loadPalette() {
 
     palette.innerHTML = ""; // 初期化
 
-    // カテゴリごとにループ
-    for (const category in symbols) {
-      symbols[category].forEach(sym => {
-        const img = document.createElement("img");
-        img.src = `symbols/${sym.file}`;
-        img.alt = sym.name;
-        img.title = sym.name;
+// カテゴリごとにループ
+for (const category in symbols) {
+  symbols[category].forEach(sym => {
+    const img = document.createElement("img");
+    img.src = `symbols/${sym.file}`;
+    img.alt = sym.name;
+    img.title = sym.name;
 
-        // サイズは画像に任せる（複数マス対応）
-        img.style.width = "auto";
-        img.style.height = "32px";
-        img.style.margin = "4px";
-        img.style.cursor = "pointer";
+    img.style.width = "auto";
+    img.style.height = "32px";
+    img.style.margin = "4px";
+    img.style.cursor = "pointer";
 
-        // ★ パレットで選択した記号を記憶
-        img.addEventListener("click", () => {
-          document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
-          img.classList.add("selected");
-
-          selectedSymbol = sym; // ← 記号を保存
-        });
-
-        palette.appendChild(img);
-      });
+    // ★ 縦長記号だけ1段下に配置
+    if (sym.height > 1) {
+      img.style.display = "block";   // ← 横並びから外れる
+      img.style.marginTop = "8px";   // ← ちょっと余白
     }
+
+    // ★ パレットで選択した記号を記憶
+    img.addEventListener("click", () => {
+      document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
+      img.classList.add("selected");
+      selectedSymbol = sym;
+    });
+
+    palette.appendChild(img);
+  });
+}
 
   } catch (e) {
     palette.innerHTML = "パレットの読み込みに失敗しました";
