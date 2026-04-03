@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>編み図エディタ</title>
+
+<style>
+  body {
+    background: #e7eef3;
+    font-family: "Inter", "Noto Sans JP", sans-serif;
+    color: #333;
+    padding: 20px;
+    margin: 0;
+  }
+
+  /* ① メニュー（上固定） */
+  #controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: fit-content;
+    margin: 0 auto 20px auto;
+  }
+
+  input {
+    width: 60px;
+    padding: 4px 6px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+  }
+
+  button {
+    background: #5f7f96;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  button:hover {
+    background: #4e6c82;
+  }
+
+  /* ② キャンバス（中央） */
+  #canvas-area {
+    text-align: center;
+  }
+
+  #grid {
+    display: inline-grid;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .cell {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #cfd8df;
+    box-sizing: border-box;
+  }
+
+  /* ③ パレット */
+ /* 下（デフォルト） */
+#palette {
+  margin-top: 20px;
+}
+
+/* 左に移動 */
+.palette-left {
+  position: fixed;
+  left: 20px;
+  top: 120px;
+  width: 120px;
+}
+
+/* 右に移動 */
+.palette-right {
+  position: fixed;
+  right: 20px;
+  top: 120px;
+  width: 120px;
+}
+
+#palette img.selected {
+  outline: 2px solid #5f7f96;
+  border-radius: 4px;
+}
+
+</style>
+</head>
+
+<body>
+
+  <!-- ① メニュー -->
+  <div id="controls">
+    横：<input id="cols" type="number" value="20">
+    縦：<input id="rows" type="number" value="20">
+    <button id="makeGrid">グリッドを作る</button>
+  </div>
+
+  <!-- ② キャンバス -->
+  <div id="canvas-area">
+    <div id="grid"></div>
+  </div>
+
+  <!-- ③ パレット（後で記号を並べる） -->
+  <div id="palette">ここにパレットが入ります</div>
+
+<script>
+function createGrid(rows, cols) {
+  const grid = document.getElementById("grid");
+
+  // 既存のグリッドを消す
+  grid.innerHTML = "";
+
+  // CSS の列・行数を設定
+  grid.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, 24px)`;
+
+  // マスを生成
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      grid.appendChild(cell);
+    }
+  }
+}
+
+document.getElementById("makeGrid").addEventListener("click", () => {
+  const rows = parseInt(document.getElementById("rows").value);
+  const cols = parseInt(document.getElementById("cols").value);
+  createGrid(rows, cols);
+});
+
+// 初期表示
+createGrid(20, 20);
+
+function setPalettePosition(pos) {
+  const palette = document.getElementById("palette");
+  palette.className = pos;
+}
+
+// パレットを読み込む
+async function loadPalette() {
+  const palette = document.getElementById("palette");
+
+  try {
+    const res = await fetch("data/symbols.json");
+    const symbols = await res.json();
+
+    palette.innerHTML = ""; // 初期化
+
+    symbols.forEach(sym => {
+      const img = document.createElement("img");
+      img.src = `symbols/${sym.file}`;
+      img.alt = sym.name;
+      img.title = sym.name;
+      img.style.width = "32px";
+      img.style.height = "32px";
+      img.style.margin = "4px";
+      img.style.cursor = "pointer";
+
+      // クリックしたら選択状態にする（後で使う）
+      img.addEventListener("click", () => {
+        document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
+        img.classList.add("selected");
+      });
+
+      palette.appendChild(img);
+    });
+
+  } catch (e) {
+    palette.innerHTML = "パレットの読み込みに失敗しました";
+    console.error(e);
+  }
+}
+
+// 初期表示でパレットを読み込む
+loadPalette();
+
+</script>
+
+</body>
+</html>
+

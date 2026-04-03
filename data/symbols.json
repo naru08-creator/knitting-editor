@@ -1,0 +1,70 @@
+[
+  { "name": "amidasimasime3", "file": "amidasimasime3.png", "width": 1, "height": 1 },
+  { "name": "amidasimasime5", "file": "amidasimasime5.png", "width": 1, "height": 1 },
+
+  { "name": "hidarimasime", "file": "hidarimasime.png", "width": 1, "height": 1 },
+  { "name": "hidarimasimeura", "file": "hidarimasimeura.png", "width": 1, "height": 1 },
+
+  { "name": "hidarimewotoosukousa", "file": "hidarimewotoosukousa.png", "width": 2, "height": 1 },
+
+  { "name": "hidariue1mekousa", "file": "hidariue1mekousa.png", "width": 1, "height": 1 },
+  { "name": "hidariue1mekousaura", "file": "hidariue1mekousaura.png", "width": 1, "height": 1 },
+
+  { "name": "hidariue2me1do", "file": "hidariue2me1do.png", "width": 1, "height": 1 },
+  { "name": "hidariue2me1doura", "file": "hidariue2me1doura.png", "width": 1, "height": 1 },
+
+  { "name": "hidariue2mekousa", "file": "hidariue2mekousa.png", "width": 4, "height": 1 },
+
+  { "name": "hidariue2meto1menokousa", "file": "hidariue2meto1menokousa.png", "width": 3, "height": 1 },
+  { "name": "hidariue2meto1menokousaura", "file": "hidariue2meto1menokousaura.png", "width": 3, "height": 1 },
+
+  { "name": "hidariue3me1do", "file": "hidariue3me1do.png", "width": 1, "height": 1 },
+  { "name": "hidariue3me1doura", "file": "hidariue3me1doura.png", "width": 1, "height": 1 },
+
+  { "name": "hikiageme3", "file": "hikiageme3.png", "width": 1, "height": 3 },
+  { "name": "hikiageme3ura", "file": "hikiageme3ura.png", "width": 1, "height": 3 },
+
+  { "name": "huseme", "file": "huseme.png", "width": 1, "height": 1 },
+
+  { "name": "kabuseme", "file": "kabuseme.png", "width": 3, "height": 1 },
+
+  { "name": "kakeme", "file": "kakeme.png", "width": 1, "height": 1 },
+
+  { "name": "makimehidari", "file": "makimehidari.png", "width": 1, "height": 1 },
+  { "name": "makimemigi", "file": "makimemigi.png", "width": 1, "height": 1 },
+
+  { "name": "migimasime", "file": "migimasime.png", "width": 1, "height": 1 },
+  { "name": "migimasimeura", "file": "migimasimeura.png", "width": 1, "height": 1 },
+
+  { "name": "migimewotoosukousa", "file": "migimewotoosukousa.png", "width": 2, "height": 1 },
+
+  { "name": "migiue1mekousa", "file": "migiue1mekousa.png", "width": 1, "height": 1 },
+  { "name": "migiue1mekousaura", "file": "migiue1mekousaura.png", "width": 1, "height": 1 },
+
+  { "name": "migiue2me1do", "file": "migiue2me1do.png", "width": 1, "height": 1 },
+  { "name": "migiue2me1doura", "file": "migiue2me1doura.png", "width": 1, "height": 1 },
+
+  { "name": "migiue2mekousa", "file": "migiue2mekousa.png", "width": 4, "height": 1 },
+
+  { "name": "migiue2meto1menokousa", "file": "migiue2meto1menokousa.png", "width": 3, "height": 1 },
+  { "name": "migiue2meto1menokousaura", "file": "migiue2meto1menokousaura.png", "width": 3, "height": 1 },
+
+  { "name": "migiue3me1do", "file": "migiue3me1do.png", "width": 1, "height": 1 },
+  { "name": "migiue3me1doura", "file": "migiue3me1doura.png", "width": 1, "height": 1 },
+
+  { "name": "nakaue3me1do", "file": "nakaue3me1do.png", "width": 1, "height": 1 },
+  { "name": "nakaue3me1doura", "file": "nakaue3me1doura.png", "width": 1, "height": 1 },
+
+  { "name": "nejirime", "file": "nejirime.png", "width": 1, "height": 1 },
+  { "name": "nejirimeura", "file": "nejirimeura.png", "width": 1, "height": 1 },
+
+  { "name": "omote", "file": "omote.png", "width": 1, "height": 1 },
+
+  { "name": "suberime", "file": "suberime.png", "width": 1, "height": 2 },
+  { "name": "suberimeura", "file": "suberimeura.png", "width": 1, "height": 2 },
+
+  { "name": "ukime", "file": "ukime.png", "width": 1, "height": 1 },
+  { "name": "ukimeura", "file": "ukimeura.png", "width": 1, "height": 1 },
+
+  { "name": "urame", "file": "urame.png", "width": 1, "height": 1 }
+]
