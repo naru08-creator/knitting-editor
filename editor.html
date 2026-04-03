@@ -161,7 +161,6 @@ document.getElementById("makeGrid").addEventListener("click", () => {
 
 createGrid(20, 20);
 
-// パレットを読み込む
 async function loadPalette() {
   const paletteNormal = document.getElementById("palette-normal");
   const paletteTall = document.getElementById("palette-tall");
@@ -174,6 +173,9 @@ async function loadPalette() {
     paletteNormal.innerHTML = "";
     paletteTall.innerHTML = "";
     paletteTaller.innerHTML = "";
+
+    // ① JSON の順番どおりに normal に全部並べる
+    const allImages = [];
 
     for (const category in symbols) {
       symbols[category].forEach(sym => {
@@ -188,23 +190,23 @@ async function loadPalette() {
           selectedSymbol = sym;
         });
 
-        // ★ 画像の縦横比で判定（height=1/2/3 を自動判別）
-        img.onload = () => {
-          const ratio = img.naturalHeight / img.naturalWidth;
-
-          if (ratio > 2.5) {
-            // height=3（引き上げ目）
-            paletteTaller.appendChild(img);
-          } else if (ratio > 1.2) {
-            // height=2（すべり目・ukime系）
-            paletteTall.appendChild(img);
-          } else {
-            // height=1（通常）
-            paletteNormal.appendChild(img);
-          }
-        };
+        allImages.push({ img, sym });
+        paletteNormal.appendChild(img);
       });
     }
+
+    // ② 画像読み込み後に縦横比で tall / taller に移動
+    allImages.forEach(({ img, sym }) => {
+      img.onload = () => {
+        const ratio = img.naturalHeight / img.naturalWidth;
+
+        if (ratio > 2.5) {
+          paletteTaller.appendChild(img); // height=3
+        } else if (ratio > 1.2) {
+          paletteTall.appendChild(img);   // height=2
+        }
+      };
+    });
 
   } catch (e) {
     paletteNormal.innerHTML = "パレットの読み込みに失敗しました";
