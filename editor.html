@@ -94,6 +94,19 @@
     cursor: pointer;
   }
 
+#palette-taller {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#palette-taller img {
+  height: 64px; /* ★ height=3 の記号はもっと大きく */
+  width: auto;
+  cursor: pointer;
+}
+
   img.selected {
     outline: 2px solid #5f7f96;
     border-radius: 4px;
@@ -117,8 +130,9 @@
   </div>
 
   <!-- ③ パレット（通常用 + 縦長用） -->
-  <div id="palette-normal"></div>
-  <div id="palette-tall"></div>
+<div id="palette-normal"></div>
+<div id="palette-tall"></div>
+<div id="palette-taller"></div> 
 
 <script>
 let selectedSymbol = null;
@@ -187,16 +201,8 @@ async function loadPalette() {
         });
 
         // ★ 画像の縦横比で縦長判定
-        img.onload = () => {
-          const isTall = img.naturalHeight > img.naturalWidth;
-
-          if (isTall) {
-            paletteTall.appendChild(img);
-          } else {
-            paletteNormal.appendChild(img);
-          }
-        };
-      });
+       
+Copilot へメッセージを送る
     }
 
   } catch (e) {
