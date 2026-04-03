@@ -68,30 +68,35 @@
   }
 
   /* ③ パレット */
+  #palette-normal {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   #palette-normal img {
     height: 32px;
     width: auto;
-    margin: 4px;
     cursor: pointer;
+  }
+
+  #palette-tall {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   #palette-tall img {
-    height: 48px; /* ← 縦長は大きめに */
+    height: 48px; /* ← 縦長は大きめ */
     width: auto;
-    margin: 6px;
     cursor: pointer;
-    display: block; /* ← 1行に1つ */
   }
 
-  #palette-normal img.selected,
-  #palette-tall img.selected {
+  img.selected {
     outline: 2px solid #5f7f96;
     border-radius: 4px;
-  }
-
-  #palette-normal,
-  #palette-tall {
-    margin-top: 20px;
   }
 
 </style>
@@ -116,7 +121,7 @@
   <div id="palette-tall"></div>
 
 <script>
-let selectedSymbol = null; // ← 選択中の記号を保存
+let selectedSymbol = null;
 
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
@@ -130,7 +135,6 @@ function createGrid(rows, cols) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
-      // セルに記号を置く
       cell.addEventListener("click", () => {
         if (!selectedSymbol) return;
 
@@ -154,7 +158,6 @@ document.getElementById("makeGrid").addEventListener("click", () => {
   );
 });
 
-// 初期表示
 createGrid(20, 20);
 
 // パレットを読み込む
@@ -183,12 +186,16 @@ async function loadPalette() {
           selectedSymbol = sym;
         });
 
-        // ★ 縦長は専用パレットへ
-        if (sym.height > 1) {
-          paletteTall.appendChild(img);
-        } else {
-          paletteNormal.appendChild(img);
-        }
+        // ★ 画像の縦横比で縦長判定
+        img.onload = () => {
+          const isTall = img.naturalHeight > img.naturalWidth;
+
+          if (isTall) {
+            paletteTall.appendChild(img);
+          } else {
+            paletteNormal.appendChild(img);
+          }
+        };
       });
     }
 
@@ -203,5 +210,4 @@ loadPalette();
 
 </body>
 </html>
-
 
