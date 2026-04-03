@@ -158,32 +158,35 @@ function setPalettePosition(pos) {
 async function loadPalette() {
   const palette = document.getElementById("palette");
 
- for (const category in symbols) {
-  symbols[category].forEach(sym => {
-    const img = document.createElement("img");
-    img.src = `symbols/${sym.file}`;
-    img.alt = sym.name;
-    img.title = sym.name;
+  try {
+    const res = await fetch("data/symbols.json");
+    const symbols = await res.json();
 
-    // サイズは画像に任せる（複数マス対応）
-    img.style.width = "auto";
-    img.style.height = "32px";
+    palette.innerHTML = ""; // 初期化
 
-    img.style.margin = "4px";
-    img.style.cursor = "pointer";
+    // カテゴリごとにループ
+    for (const category in symbols) {
+      symbols[category].forEach(sym => {
+        const img = document.createElement("img");
+        img.src = `symbols/${sym.file}`;
+        img.alt = sym.name;
+        img.title = sym.name;
 
-    palette.appendChild(img);
-  });
-}
+        // サイズは画像に任せる（複数マス対応）
+        img.style.width = "auto";
+        img.style.height = "32px";
+        img.style.margin = "4px";
+        img.style.cursor = "pointer";
 
-      // クリックしたら選択状態にする（後で使う）
-      img.addEventListener("click", () => {
-        document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
-        img.classList.add("selected");
+        // クリックで選択
+        img.addEventListener("click", () => {
+          document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
+          img.classList.add("selected");
+        });
+
+        palette.appendChild(img);
       });
-
-      palette.appendChild(img);
-    });
+    }
 
   } catch (e) {
     palette.innerHTML = "パレットの読み込みに失敗しました";
