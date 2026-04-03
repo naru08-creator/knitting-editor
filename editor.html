@@ -13,7 +13,7 @@
     margin: 0;
   }
 
-  /* ① メニュー（上固定） */
+  /* ① メニュー */
   #controls {
     display: flex;
     gap: 10px;
@@ -47,7 +47,7 @@
     background: #4e6c82;
   }
 
-  /* ② キャンバス（中央） */
+  /* ② キャンバス */
   #canvas-area {
     text-align: center;
   }
@@ -68,11 +68,13 @@
   }
 
   /* ③ パレット */
-  #palette-normal {
+  #palette-normal,
+  #palette-tall,
+  #palette-taller {
     margin-top: 20px;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   #palette-normal img {
@@ -81,37 +83,22 @@
     cursor: pointer;
   }
 
-  #palette-tall {
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
   #palette-tall img {
-    height: 48px; /* ← 縦長は大きめ */
+    height: 48px;
     width: auto;
     cursor: pointer;
   }
 
-#palette-taller {
-  margin-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-#palette-taller img {
-  height: 64px; /* ★ height=3 の記号はもっと大きく */
-  width: auto;
-  cursor: pointer;
-}
+  #palette-taller img {
+    height: 64px;
+    width: auto;
+    cursor: pointer;
+  }
 
   img.selected {
     outline: 2px solid #5f7f96;
     border-radius: 4px;
   }
-
 </style>
 </head>
 
@@ -129,10 +116,10 @@
     <div id="grid"></div>
   </div>
 
-  <!-- ③ パレット（通常用 + 縦長用） -->
-<div id="palette-normal"></div>
-<div id="palette-tall"></div>
-<div id="palette-taller"></div> 
+  <!-- ③ パレット -->
+  <div id="palette-normal"></div>
+  <div id="palette-tall"></div>
+  <div id="palette-taller"></div>
 
 <script>
 let selectedSymbol = null;
@@ -178,6 +165,7 @@ createGrid(20, 20);
 async function loadPalette() {
   const paletteNormal = document.getElementById("palette-normal");
   const paletteTall = document.getElementById("palette-tall");
+  const paletteTaller = document.getElementById("palette-taller");
 
   try {
     const res = await fetch("data/symbols.json");
@@ -185,6 +173,7 @@ async function loadPalette() {
 
     paletteNormal.innerHTML = "";
     paletteTall.innerHTML = "";
+    paletteTaller.innerHTML = "";
 
     for (const category in symbols) {
       symbols[category].forEach(sym => {
@@ -194,15 +183,27 @@ async function loadPalette() {
         img.title = sym.name;
 
         img.addEventListener("click", () => {
-          document.querySelectorAll("#palette-normal img, #palette-tall img")
-            .forEach(i => i.classList.remove("selected"));
+          document.querySelectorAll("img").forEach(i => i.classList.remove("selected"));
           img.classList.add("selected");
           selectedSymbol = sym;
         });
 
-        // ★ 画像の縦横比で縦長判定
-       
-Copilot へメッセージを送る
+        // ★ 画像の縦横比で判定（height=1/2/3 を自動判別）
+        img.onload = () => {
+          const ratio = img.naturalHeight / img.naturalWidth;
+
+          if (ratio > 2.5) {
+            // height=3（引き上げ目）
+            paletteTaller.appendChild(img);
+          } else if (ratio > 1.2) {
+            // height=2（すべり目・ukime系）
+            paletteTall.appendChild(img);
+          } else {
+            // height=1（通常）
+            paletteNormal.appendChild(img);
+          }
+        };
+      });
     }
 
   } catch (e) {
@@ -216,4 +217,5 @@ loadPalette();
 
 </body>
 </html>
+
 
