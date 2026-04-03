@@ -94,9 +94,9 @@
   border-radius: 4px;
 }
 
-.palette img {
+#palette img {
   width: auto;
-  height: auto;
+  height: 32px; /* ← 高さだけ固定、横は自動 */
 }
 
 </style>
@@ -120,6 +120,8 @@
   <div id="palette">ここにパレットが入ります</div>
 
 <script>
+let selectedSymbol = null; // ← 選択中の記号を保存
+
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
 
@@ -135,6 +137,19 @@ function createGrid(rows, cols) {
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
+
+      // ★ セルをクリックしたら記号を置く
+      cell.addEventListener("click", () => {
+        if (!selectedSymbol) return; // 記号が選ばれていない時は何もしない
+
+        cell.innerHTML = ""; // 既存の記号を消す
+        const img = document.createElement("img");
+        img.src = `symbols/${selectedSymbol.file}`;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        cell.appendChild(img);
+      });
+
       grid.appendChild(cell);
     }
   }
@@ -178,10 +193,12 @@ async function loadPalette() {
         img.style.margin = "4px";
         img.style.cursor = "pointer";
 
-        // クリックで選択
+        // ★ パレットで選択した記号を記憶
         img.addEventListener("click", () => {
           document.querySelectorAll("#palette img").forEach(i => i.classList.remove("selected"));
           img.classList.add("selected");
+
+          selectedSymbol = sym; // ← 記号を保存
         });
 
         palette.appendChild(img);
@@ -198,6 +215,7 @@ async function loadPalette() {
 loadPalette();
 
 </script>
+
 
 </body>
 </html>
