@@ -157,11 +157,15 @@ function createSymbolElement(row, col, symbol) {
   const element = document.createElement("div");
   const gridColumnStart = currentCols - (col + symbol.width - 1) + 1;
   const gridRowStart = currentRows - (row + symbol.height - 1) + 1;
+  const offsetX = symbol.width % 2 === 0 ? CELL_SIZE / 2 : 0;
+  const offsetY = symbol.height % 2 === 0 ? CELL_SIZE / 2 : 0;
 
   element.className = "placed-symbol";
   element.style.gridColumn = `${gridColumnStart} / span ${symbol.width}`;
   element.style.gridRow = `${gridRowStart} / span ${symbol.height}`;
   element.style.backgroundImage = `url("symbols/${symbol.file}")`;
+  element.style.setProperty("--symbol-offset-x", `${offsetX}px`);
+  element.style.setProperty("--symbol-offset-y", `${offsetY}px`);
   element.setAttribute("aria-label", symbol.name || symbol.file);
 
   return element;
