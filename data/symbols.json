@@ -1,13 +1,13 @@
 {
   "basic": [
-    { "name": "omote", "file": "omote.png", "width": 1, "height": 1 },
-    { "name": "urame", "file": "urame.png", "width": 1, "height": 1 },
-    { "name": "huseme", "file": "huseme.png", "width": 1, "height": 1 },
-    { "name": "suberime", "file": "suberime.png", "width": 1, "height": 2 },
-    { "name": "suberimeura", "file": "suberimeura.png", "width": 1, "height": 2 },
-    { "name": "ukime", "file": "ukime.png", "width": 1, "height": 1 },
-    { "name": "ukimeura", "file": "ukimeura.png", "width": 1, "height": 1 },
-    { "name": "kakeme", "file": "kakeme.png", "width": 1, "height": 1 }
+    { "name": "表目", "file": "omote.png", "width": 1, "height": 1 },
+    { "name": "裏目", "file": "urame.png", "width": 1, "height": 1 },
+    { "name": "伏せ目", "file": "huseme.png", "width": 1, "height": 1 },
+    { "name": "すべり目", "file": "suberime.png", "width": 1, "height": 2 },
+    { "name": "すべり目裏", "file": "suberimeura.png", "width": 1, "height": 2 },
+    { "name": "うき目", "file": "ukime.png", "width": 1, "height": 2 },
+    { "name": "うき目裏", "file": "ukimeura.png", "width": 1, "height": 2 }
+    { "name": "かけ目", "file": "kakeme.png", "width": 1, "height": 1 }
   ],
 
   "increase": [
@@ -23,10 +23,10 @@
     { "name": "migimewotoosukousa", "file": "migimewotoosukousa.png", "width": 2, "height": 1 },
     { "name": "hidarimewotoosukousa", "file": "hidarimewotoosukousa.png", "width": 2, "height": 1 },
 
-    { "name": "migiue1mekousa", "file": "migiue1mekousa.png", "width": 1, "height": 1 },
-    { "name": "migiue1mekousaura", "file": "migiue1mekousaura.png", "width": 1, "height": 1 },
-    { "name": "hidariue1mekousa", "file": "hidariue1mekousa.png", "width": 1, "height": 1 },
-    { "name": "hidariue1mekousaura", "file": "hidariue1mekousaura.png", "width": 1, "height": 1 },
+    { "name": "migiue1mekousa", "file": "migiue1mekousa.png", "width": 2, "height": 1 },
+    { "name": "migiue1mekousaura", "file": "migiue1mekousaura.png", "width": 2, "height": 1 },
+    { "name": "hidariue1mekousa", "file": "hidariue1mekousa.png", "width": 2, "height": 1 },
+    { "name": "hidariue1mekousaura", "file": "hidariue1mekousaura.png", "width": 2, "height": 1 },
 
     { "name": "migiue2me1do", "file": "migiue2me1do.png", "width": 1, "height": 1 },
     { "name": "migiue2me1doura", "file": "migiue2me1doura.png", "width": 1, "height": 1 },
