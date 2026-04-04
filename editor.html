@@ -219,6 +219,10 @@ img.selected {
   background: #c79d9d;
 }
 
+.cell:nth-child(5n) {
+  background-color: #f3f6f8;
+}
+
 </style>
 
 </head>
@@ -231,21 +235,21 @@ img.selected {
   <button id="makeGrid">グリッドを作る</button>
 </div>
 
-<div id="undo-redo-controls">
-  <button id="undoBtn" class="ur-btn">⟵ Undo</button>
-  <button id="redoBtn" class="ur-btn">Redo ⟶</button>
-</div>
-
+<!-- ★ Undo / Redo / 消しゴム：これ1つだけでOK -->
 <div id="undo-redo-controls">
   <button id="undoBtn" class="ur-btn">⟵ Undo</button>
   <button id="redoBtn" class="ur-btn">Redo ⟶</button>
   <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
 </div>
 
-<div id="canvas-area">
+<div id="grid-wrapper" style="display:flex;">
   <div id="grid"></div>
+  <div id="colNumbers"></div> <!-- 右側の番号 -->
 </div>
 
+<div id="rowNumbers"></div> <!-- 下側の番号 -->
+
+<!-- パレット -->
 <div class="palette-group">
   <button class="toggle-btn" data-target="palette-1">▶ 1マス</button>
   <div id="palette-1" class="palette-content"></div>
@@ -406,7 +410,7 @@ function placeSymbol(cell) {
   saveHistory();
 }
 
-// ★ グリッド作成
+// ★ グリッド作成（下→上、右→左 ＋ 色付け ＋ 番号）
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
 
@@ -414,8 +418,10 @@ function createGrid(rows, cols) {
   grid.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
   grid.style.gridTemplateRows = `repeat(${rows}, 24px)`;
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
+  // ★ セル生成（下→上、右→左）
+  for (let r = rows - 1; r >= 0; r--) {        // 下 → 上
+    for (let c = cols - 1; c >= 0; c--) {      // 右 → 左
+
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
@@ -430,14 +436,14 @@ function createGrid(rows, cols) {
         if (isDragging) placeSymbol(cell);
       });
 
-      // ★ タッチ開始（iPad 指 OK）
+      // タッチ開始
       cell.addEventListener("touchstart", (e) => {
         e.preventDefault();
         isDragging = true;
         placeSymbol(cell);
       });
 
-      // ★ タッチ移動（iPad 指 OK）
+      // タッチ移動
       cell.addEventListener("touchmove", (e) => {
         e.preventDefault();
         const touch = e.touches[0];
@@ -447,9 +453,41 @@ function createGrid(rows, cols) {
         }
       });
 
+      // ★ 5マスごとに色を変える（編み図ガイド）
+      if (r % 5 === 0 || c % 5 === 0) {
+        cell.style.backgroundColor = "#f3f6f8";
+      }
+
       grid.appendChild(cell);
     }
   }
+
+  // ★ 下の番号（右→左）
+  const rowNumbers = document.getElementById("rowNumbers");
+  rowNumbers.innerHTML = "";
+  rowNumbers.style.display = "grid";
+  rowNumbers.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
+
+  for (let c = cols - 1; c >= 0; c--) {
+    const num = document.createElement("div");
+    num.textContent = cols - c; // 右→左に 1,2,3…
+    num.style.textAlign = "center";
+    rowNumbers.appendChild(num);
+  }
+
+  // ★ 右の番号（下→上）
+  const colNumbers = document.getElementById("colNumbers");
+  colNumbers.innerHTML = "";
+  colNumbers.style.display = "grid";
+  colNumbers.style.gridTemplateRows = `repeat(${rows}, 24px)`;
+
+  for (let r = rows - 1; r >= 0; r--) {
+    const num = document.createElement("div");
+    num.textContent = rows - r; // 下→上に 1,2,3…
+    num.style.textAlign = "center";
+    colNumbers.appendChild(num);
+  }
+}
 
   saveHistory(); // 初期状態を履歴に入れる
 }
