@@ -1,4 +1,5 @@
 ﻿const CELL_SIZE = 24;
+const SYMBOL_PADDING = 3;
 
 let currentRows = 20;
 let currentCols = 20;
@@ -57,6 +58,10 @@ function applyBaseBorder(cell, r, c) {
   if (r % 5 === 0) cell.style.borderTop = "1px solid #999";
 }
 
+function getGridOverlay() {
+  return document.getElementById("grid-overlay");
+}
+
 function clearPlacements() {
   placements.forEach((placement) => {
     placement.element.remove();
@@ -94,7 +99,7 @@ function createGrid(rows, cols) {
   clearPlacements();
 
   const grid = document.getElementById("grid");
-  grid.innerHTML = "";
+  grid.innerHTML = "<div id=\"grid-overlay\"></div>";
   grid.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
   grid.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
   grid.style.width = `${cols * CELL_SIZE}px`;
@@ -155,17 +160,17 @@ function canPlaceSymbol(row, col, symbol) {
 
 function createSymbolElement(row, col, symbol) {
   const element = document.createElement("div");
-  const gridColumnStart = currentCols - (col + symbol.width - 1) + 1;
-  const gridRowStart = currentRows - (row + symbol.height - 1) + 1;
-  const offsetX = symbol.width % 2 === 0 ? CELL_SIZE / 2 : 0;
-  const offsetY = symbol.height % 2 === 0 ? CELL_SIZE / 2 : 0;
+  const left = (currentCols - (col + symbol.width - 1)) * CELL_SIZE + SYMBOL_PADDING;
+  const top = (currentRows - (row + symbol.height - 1)) * CELL_SIZE + SYMBOL_PADDING;
+  const width = symbol.width * CELL_SIZE - SYMBOL_PADDING * 2;
+  const height = symbol.height * CELL_SIZE - SYMBOL_PADDING * 2;
 
   element.className = "placed-symbol";
-  element.style.gridColumn = `${gridColumnStart} / span ${symbol.width}`;
-  element.style.gridRow = `${gridRowStart} / span ${symbol.height}`;
+  element.style.left = `${left}px`;
+  element.style.top = `${top}px`;
+  element.style.width = `${width}px`;
+  element.style.height = `${height}px`;
   element.style.backgroundImage = `url("symbols/${symbol.file}")`;
-  element.style.setProperty("--symbol-offset-x", `${offsetX}px`);
-  element.style.setProperty("--symbol-offset-y", `${offsetY}px`);
   element.setAttribute("aria-label", symbol.name || symbol.file);
 
   return element;
@@ -179,7 +184,7 @@ function placeSymbol(row, col, symbol) {
   const id = `placement-${placementId++}`;
   const element = createSymbolElement(row, col, symbol);
 
-  document.getElementById("grid").appendChild(element);
+  getGridOverlay().appendChild(element);
 
   placements.set(id, {
     id,
