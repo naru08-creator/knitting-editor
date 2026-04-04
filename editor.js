@@ -56,6 +56,17 @@ function pushHistoryEntry(entry) {
   updateHistoryButtons();
 }
 
+function snapshotPlacements() {
+  return Array.from(placements.values()).map((placement) => ({
+    id: placement.id,
+    row: placement.row,
+    col: placement.col,
+    symbol: placement.symbol,
+    cells: placement.cells.map((cell) => ({ ...cell })),
+    element: null
+  }));
+}
+
 function clearSelection() {
   document.querySelectorAll(".palette-symbol.selected").forEach((element) => {
     element.classList.remove("selected");
@@ -119,7 +130,30 @@ function buildNumberLabels(rows, cols) {
   }
 }
 
-function createGrid(rows, cols) {
+function restorePlacements(records) {
+  records.forEach((record) => {
+    const cells = getPlacementCells(record.row, record.col, record.symbol);
+    if (!cells) return;
+
+    const occupied = cells.some((cell) => occupiedCells.has(getCellKey(cell.row, cell.col)));
+    if (occupied) return;
+
+    const restored = {
+      id: record.id,
+      row: record.row,
+      col: record.col,
+      symbol: record.symbol,
+      cells,
+      element: null
+    };
+
+    renderPlacement(restored);
+  });
+}
+
+function createGrid(rows, cols, options = {}) {
+  const preservedPlacements = options.preservePlacements ? snapshotPlacements() : [];
+
   currentRows = rows;
   currentCols = cols;
   clearPlacements();
@@ -156,6 +190,7 @@ function createGrid(rows, cols) {
   }
 
   buildNumberLabels(rows, cols);
+  restorePlacements(preservedPlacements);
 }
 
 function getPlacementCells(row, col, symbol) {
@@ -528,7 +563,7 @@ function setupControls() {
     const rows = parseInt(document.getElementById("rows").value, 10);
     const cols = parseInt(document.getElementById("cols").value, 10);
 
-    createGrid(rows, cols);
+    createGrid(rows, cols, { preservePlacements: true });
   });
 
   document.getElementById("undoBtn").addEventListener("click", undoAction);
