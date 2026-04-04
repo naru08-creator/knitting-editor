@@ -62,18 +62,28 @@
     background-size: cover;
   }
 
-  #palette-normal,
-  #palette-tall,
-  #palette-taller {
-    margin-top: 20px;
+  /* ★ 新しいパレット分類の CSS（これだけでOK） */
+  #palette-1,
+  #palette-w2,
+  #palette-w3,
+  #palette-w4,
+  #palette-h2,
+  #palette-h3 {
+    margin-top: 12px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  #palette-normal img { height: 32px; cursor: pointer; }
-  #palette-tall img { height: 48px; cursor: pointer; }
-  #palette-taller img { height: 64px; cursor: pointer; }
+  #palette-1 img,
+  #palette-w2 img,
+  #palette-w3 img,
+  #palette-w4 img,
+  #palette-h2 img,
+  #palette-h3 img {
+    height: 32px;
+    cursor: pointer;
+  }
 
   img.selected {
     outline: 2px solid #5f7f96;
@@ -223,4 +233,3 @@ loadPalette();
 
 </body>
 </html>
-
