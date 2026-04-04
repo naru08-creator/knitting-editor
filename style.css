@@ -74,6 +74,11 @@ button {
   background: #c79d9d;
 }
 
+.ur-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
 .ur-btn.active {
   background: #8c5a5a;
 }

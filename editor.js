@@ -10,6 +10,8 @@ let placementId = 0;
 const placements = new Map();
 let occupiedCells = new Map();
 let symbolsData = [];
+let undoStack = [];
+let redoStack = [];
 
 function getCellKey(row, col) {
   return `${row}:${col}`;
@@ -24,6 +26,31 @@ function getPaletteId(symbol) {
   if (symbol.width === 1 && symbol.height === 3) return "palette-h3";
 
   return null;
+}
+
+function getGridCells() {
+  return document.getElementById("grid-cells");
+}
+
+function getGridOverlay() {
+  return document.getElementById("grid-overlay");
+}
+
+function updateHistoryButtons() {
+  document.getElementById("undoBtn").disabled = undoStack.length === 0;
+  document.getElementById("redoBtn").disabled = redoStack.length === 0;
+}
+
+function resetHistory() {
+  undoStack = [];
+  redoStack = [];
+  updateHistoryButtons();
+}
+
+function pushHistoryEntry(entry) {
+  undoStack.push(entry);
+  redoStack = [];
+  updateHistoryButtons();
 }
 
 function clearSelection() {
@@ -56,14 +83,6 @@ function applyBaseBorder(cell, r, c) {
 
   if (c % 5 === 0) cell.style.borderRight = "1px solid #999";
   if (r % 5 === 0) cell.style.borderTop = "1px solid #999";
-}
-
-function getGridCells() {
-  return document.getElementById("grid-cells");
-}
-
-function getGridOverlay() {
-  return document.getElementById("grid-overlay");
 }
 
 function clearPlacements() {
@@ -101,6 +120,7 @@ function createGrid(rows, cols) {
   currentRows = rows;
   currentCols = cols;
   clearPlacements();
+  resetHistory();
 
   const gridCells = getGridCells();
   const gridOverlay = getGridOverlay();
@@ -187,34 +207,68 @@ function createSymbolElement(row, col, symbol) {
   return element;
 }
 
-function placeSymbol(row, col, symbol) {
-  const cells = canPlaceSymbol(row, col, symbol);
+function createPlacementRecord(row, col, symbol, id = null) {
+  const cells = getPlacementCells(row, col, symbol);
 
-  if (!cells) return;
+  if (!cells) return null;
 
-  const id = `placement-${placementId++}`;
-  const element = createSymbolElement(row, col, symbol);
-
-  getGridOverlay().appendChild(element);
-
-  placements.set(id, {
-    id,
+  return {
+    id: id ?? `placement-${placementId++}`,
     row,
     col,
     symbol,
     cells,
-    element
-  });
+    element: null
+  };
+}
 
-  cells.forEach((cell) => {
-    occupiedCells.set(getCellKey(cell.row, cell.col), id);
+function renderPlacement(record) {
+  const element = createSymbolElement(record.row, record.col, record.symbol);
+  record.element = element;
+  getGridOverlay().appendChild(element);
+  placements.set(record.id, record);
+
+  record.cells.forEach((cell) => {
+    occupiedCells.set(getCellKey(cell.row, cell.col), record.id);
   });
 }
 
-function removePlacementById(id) {
+function placeSymbol(row, col, symbol, options = {}) {
+  const cells = canPlaceSymbol(row, col, symbol);
+
+  if (!cells) return null;
+
+  const record = {
+    id: options.id ?? `placement-${placementId++}`,
+    row,
+    col,
+    symbol,
+    cells,
+    element: null
+  };
+
+  renderPlacement(record);
+
+  if (options.recordHistory !== false) {
+    pushHistoryEntry({ type: "place", placement: { ...record, element: null } });
+  }
+
+  return record;
+}
+
+function removePlacementById(id, options = {}) {
   const placement = placements.get(id);
 
-  if (!placement) return;
+  if (!placement) return null;
+
+  const snapshot = {
+    id: placement.id,
+    row: placement.row,
+    col: placement.col,
+    symbol: placement.symbol,
+    cells: placement.cells.map((cell) => ({ ...cell })),
+    element: null
+  };
 
   placement.element.remove();
   placement.cells.forEach((cell) => {
@@ -222,6 +276,64 @@ function removePlacementById(id) {
   });
 
   placements.delete(id);
+
+  if (options.recordHistory !== false) {
+    pushHistoryEntry({ type: "remove", placement: snapshot });
+  }
+
+  return snapshot;
+}
+
+function restorePlacement(record) {
+  if (!record || placements.has(record.id)) return;
+
+  const occupied = record.cells.some((cell) => occupiedCells.has(getCellKey(cell.row, cell.col)));
+  if (occupied) return;
+
+  const restored = {
+    id: record.id,
+    row: record.row,
+    col: record.col,
+    symbol: record.symbol,
+    cells: record.cells.map((cell) => ({ ...cell })),
+    element: null
+  };
+
+  renderPlacement(restored);
+}
+
+function undoAction() {
+  const entry = undoStack.pop();
+  if (!entry) {
+    updateHistoryButtons();
+    return;
+  }
+
+  if (entry.type === "place") {
+    removePlacementById(entry.placement.id, { recordHistory: false });
+  } else if (entry.type === "remove") {
+    restorePlacement(entry.placement);
+  }
+
+  redoStack.push(entry);
+  updateHistoryButtons();
+}
+
+function redoAction() {
+  const entry = redoStack.pop();
+  if (!entry) {
+    updateHistoryButtons();
+    return;
+  }
+
+  if (entry.type === "place") {
+    restorePlacement(entry.placement);
+  } else if (entry.type === "remove") {
+    removePlacementById(entry.placement.id, { recordHistory: false });
+  }
+
+  undoStack.push(entry);
+  updateHistoryButtons();
 }
 
 function handleCellClick(event) {
@@ -326,7 +438,11 @@ function setupControls() {
     createGrid(rows, cols);
   });
 
+  document.getElementById("undoBtn").addEventListener("click", undoAction);
+  document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+
+  updateHistoryButtons();
 }
 
 async function init() {
