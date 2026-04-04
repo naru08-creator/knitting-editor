@@ -94,9 +94,23 @@
   <div id="grid"></div>
 </div>
 
-<div id="palette-normal"></div>
-<div id="palette-tall"></div>
-<div id="palette-taller"></div>
+<h3>1マス</h3>
+<div id="palette-1"></div>
+
+<h3>横2マス</h3>
+<div id="palette-w2"></div>
+
+<h3>横3マス</h3>
+<div id="palette-w3"></div>
+
+<h3>横4マス</h3>
+<div id="palette-w4"></div>
+
+<h3>縦2マス</h3>
+<div id="palette-h2"></div>
+
+<h3>縦3マス</h3>
+<div id="palette-h3"></div>
 
 <script>
 let selectedSymbol = null;
@@ -163,19 +177,24 @@ document.getElementById("makeGrid").addEventListener("click", () => {
 createGrid(20, 20);
 
 async function loadPalette() {
-  const paletteNormal = document.getElementById("palette-normal");
-  const paletteTall = document.getElementById("palette-tall");
-  const paletteTaller = document.getElementById("palette-taller");
+  const p1 = document.getElementById("palette-1");
+  const p2 = document.getElementById("palette-w2");
+  const p3 = document.getElementById("palette-w3");
+  const p4 = document.getElementById("palette-w4");
+  const pH2 = document.getElementById("palette-h2");
+  const pH3 = document.getElementById("palette-h3");
 
   try {
     const res = await fetch("data/symbols.json");
     const symbols = await res.json();
 
-    paletteNormal.innerHTML = "";
-    paletteTall.innerHTML = "";
-    paletteTaller.innerHTML = "";
-
-    const allImages = [];
+    // 全部クリア
+    p1.innerHTML = "";
+    p2.innerHTML = "";
+    p3.innerHTML = "";
+    p4.innerHTML = "";
+    pH2.innerHTML = "";
+    pH3.innerHTML = "";
 
     for (const category in symbols) {
       symbols[category].forEach(sym => {
@@ -190,10 +209,21 @@ async function loadPalette() {
           selectedSymbol = sym;
         });
 
-        allImages.push({ img, sym });
-        paletteNormal.appendChild(img);
+        // ★ 分類ルール
+        if (sym.width === 1 && sym.height === 1) p1.appendChild(img);
+        else if (sym.width === 2 && sym.height === 1) p2.appendChild(img);
+        else if (sym.width === 3 && sym.height === 1) p3.appendChild(img);
+        else if (sym.width === 4 && sym.height === 1) p4.appendChild(img);
+        else if (sym.width === 1 && sym.height === 2) pH2.appendChild(img);
+        else if (sym.width === 1 && sym.height === 3) pH3.appendChild(img);
       });
     }
+
+  } catch (e) {
+    p1.innerHTML = "パレットの読み込みに失敗しました";
+    console.error(e);
+  }
+}
 
     allImages.forEach(({ img, sym }) => {
       img.onload = () => {
