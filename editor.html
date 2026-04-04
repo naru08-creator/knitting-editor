@@ -5,7 +5,7 @@
 <title>編み図エディタ</title>
 
 <style>
-  body {
+body {
   background: #e7eef3;
   font-family: "Inter", "Noto Sans JP", sans-serif;
   color: #333;
@@ -54,10 +54,10 @@ button {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* グリッドの1マス */
 .cell {
   width: 24px;
   height: 24px;
-  border: 1px solid #cfd8df;
   box-sizing: border-box;
   background-size: cover;
 }
@@ -103,7 +103,7 @@ img.selected {
   margin-bottom: 10px;
 }
 
-/* ボタン */
+/* パレット開閉ボタン */
 .toggle-btn {
   width: 100%;
   text-align: left;
@@ -140,18 +140,18 @@ img.selected {
   opacity: 0;
   transition: max-height 0.35s ease, opacity 0.35s ease;
   margin-top: 8px;
-
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-/* 開いた状態（1回だけ定義） */
+/* 開いた状態 */
 .palette-content.open {
   max-height: 500px;
   opacity: 1;
 }
 
+/* Undo / Redo / Eraser 周り */
 #undo-redo-controls {
   text-align: center;
   margin-bottom: 20px;
@@ -160,35 +160,8 @@ img.selected {
   gap: 12px;
 }
 
-/* Undo / Redo ボタン */
 .ur-btn {
-  background: #6f8fa6; /* くすみブルー */
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
-}
-
-/* ホバーでふわっと */
-.ur-btn:hover {
-  background: #7fa0b8;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
-}
-
-/* 押したときに少し沈む */
-.ur-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
-}
-
-/* Undo / Redo / Eraser の共通デザイン */
-.ur-btn {
-  background: #6f8fa6; /* くすみブルー */
+  background: #6f8fa6;
   color: white;
   border: none;
   padding: 8px 18px;
@@ -210,7 +183,7 @@ img.selected {
   box-shadow: 0 1px 3px rgba(0,0,0,0.10);
 }
 
-/* 消しゴムだけ色を少し変える（やさしいピンクグレー） */
+/* 消しゴムだけ色を少し変える */
 .ur-btn.eraser {
   background: #b48c8c;
 }
@@ -218,8 +191,8 @@ img.selected {
 .ur-btn.eraser:hover {
   background: #c79d9d;
 }
-
 </style>
+
 
 </head>
 
