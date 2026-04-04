@@ -6,6 +6,9 @@ let currentCols = 20;
 let selectedSymbol = null;
 let eraserMode = false;
 let placementId = 0;
+let isPointerDrawing = false;
+let activePointerId = null;
+let lastPaintedCellKey = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -121,6 +124,7 @@ function createGrid(rows, cols) {
   currentCols = cols;
   clearPlacements();
   resetHistory();
+  stopPointerDrawing();
 
   const gridCells = getGridCells();
   const gridOverlay = getGridOverlay();
@@ -147,8 +151,6 @@ function createGrid(rows, cols) {
       cell.dataset.col = String(col);
 
       applyBaseBorder(cell, r, c);
-      cell.addEventListener("click", handleCellClick);
-
       gridCells.appendChild(cell);
     }
   }
@@ -207,21 +209,6 @@ function createSymbolElement(row, col, symbol) {
   return element;
 }
 
-function createPlacementRecord(row, col, symbol, id = null) {
-  const cells = getPlacementCells(row, col, symbol);
-
-  if (!cells) return null;
-
-  return {
-    id: id ?? `placement-${placementId++}`,
-    row,
-    col,
-    symbol,
-    cells,
-    element: null
-  };
-}
-
 function renderPlacement(record) {
   const element = createSymbolElement(record.row, record.col, record.symbol);
   record.element = element;
@@ -250,7 +237,7 @@ function placeSymbol(row, col, symbol, options = {}) {
   renderPlacement(record);
 
   if (options.recordHistory !== false) {
-    pushHistoryEntry({ type: "place", placement: { ...record, element: null } });
+    pushHistoryEntry({ type: "place", placement: { ...record, cells: record.cells.map((cell) => ({ ...cell })), element: null } });
   }
 
   return record;
@@ -336,10 +323,60 @@ function redoAction() {
   updateHistoryButtons();
 }
 
-function handleCellClick(event) {
-  const row = Number(event.currentTarget.dataset.row);
-  const col = Number(event.currentTarget.dataset.col);
-  const occupiedId = occupiedCells.get(getCellKey(row, col));
+function isEditableTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  const tagName = target.tagName;
+  return target.isContentEditable || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT";
+}
+
+function handleKeydown(event) {
+  if (!(event.ctrlKey || event.metaKey) || isEditableTarget(event.target)) {
+    return;
+  }
+
+  const key = event.key.toLowerCase();
+
+  if (key === "z" && event.shiftKey) {
+    event.preventDefault();
+    redoAction();
+    return;
+  }
+
+  if (key === "z") {
+    event.preventDefault();
+    undoAction();
+    return;
+  }
+
+  if (key === "y") {
+    event.preventDefault();
+    redoAction();
+  }
+}
+
+function getCellFromPoint(clientX, clientY) {
+  const element = document.elementFromPoint(clientX, clientY);
+
+  if (!(element instanceof HTMLElement)) return null;
+  if (!element.classList.contains("cell")) return null;
+
+  return element;
+}
+
+function paintCell(cell) {
+  if (!cell) return;
+
+  const row = Number(cell.dataset.row);
+  const col = Number(cell.dataset.col);
+  const cellKey = getCellKey(row, col);
+
+  if (cellKey === lastPaintedCellKey) {
+    return;
+  }
+
+  lastPaintedCellKey = cellKey;
+  const occupiedId = occupiedCells.get(cellKey);
 
   if (eraserMode) {
     if (occupiedId) {
@@ -353,6 +390,53 @@ function handleCellClick(event) {
   }
 
   placeSymbol(row, col, selectedSymbol);
+}
+
+function startPointerDrawing(event) {
+  if (event.button !== undefined && event.button !== 0) {
+    return;
+  }
+
+  if (!eraserMode && !selectedSymbol) {
+    return;
+  }
+
+  const cell = event.target.closest(".cell");
+  if (!(cell instanceof HTMLElement)) {
+    return;
+  }
+
+  isPointerDrawing = true;
+  activePointerId = event.pointerId;
+  lastPaintedCellKey = null;
+
+  cell.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+  paintCell(cell);
+}
+
+function continuePointerDrawing(event) {
+  if (!isPointerDrawing || event.pointerId !== activePointerId) {
+    return;
+  }
+
+  const cell = getCellFromPoint(event.clientX, event.clientY);
+  if (!cell) {
+    return;
+  }
+
+  event.preventDefault();
+  paintCell(cell);
+}
+
+function stopPointerDrawing(event = null) {
+  if (event && activePointerId !== null && event.pointerId !== activePointerId) {
+    return;
+  }
+
+  isPointerDrawing = false;
+  activePointerId = null;
+  lastPaintedCellKey = null;
 }
 
 function createPaletteItem(symbol) {
@@ -441,6 +525,15 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+  document.addEventListener("keydown", handleKeydown);
+
+  const gridCells = getGridCells();
+  gridCells.addEventListener("pointerdown", startPointerDrawing);
+  gridCells.addEventListener("pointermove", continuePointerDrawing);
+  gridCells.addEventListener("pointerup", stopPointerDrawing);
+  gridCells.addEventListener("pointercancel", stopPointerDrawing);
+  gridCells.addEventListener("pointerleave", continuePointerDrawing);
+  document.addEventListener("pointerup", stopPointerDrawing);
 
   updateHistoryButtons();
 }

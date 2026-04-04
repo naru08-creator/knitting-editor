@@ -106,6 +106,7 @@ button {
 }
 
 #grid-cells {
+  touch-action: none;
   position: relative;
   z-index: 2;
   display: grid;
