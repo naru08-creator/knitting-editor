@@ -93,7 +93,7 @@ function toggleEraser() {
 function applyBaseBorder(cell, rowNumber, colNumber) {
   cell.style.border = "1px solid #ddd";
 
-  if (colNumber % 5 === 0) cell.style.borderRight = "1px solid #999";
+  if ((currentCols - colNumber + 1) % 5 === 0) cell.style.borderRight = "1px solid #999";
   if (rowNumber % 5 === 0) cell.style.borderTop = "1px solid #999";
 }
 
