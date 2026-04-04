@@ -8,7 +8,6 @@ let placementId = 0;
 
 const placements = new Map();
 let occupiedCells = new Map();
-let cellMap = new Map();
 let symbolsData = [];
 
 function getCellKey(row, col) {
@@ -92,7 +91,6 @@ function buildNumberLabels(rows, cols) {
 function createGrid(rows, cols) {
   currentRows = rows;
   currentCols = cols;
-  cellMap = new Map();
   clearPlacements();
 
   const grid = document.getElementById("grid");
@@ -115,7 +113,6 @@ function createGrid(rows, cols) {
       applyBaseBorder(cell, r, c);
       cell.addEventListener("click", handleCellClick);
 
-      cellMap.set(getCellKey(row, col), cell);
       grid.appendChild(cell);
     }
   }
@@ -167,7 +164,7 @@ function createSymbolElement(row, col, symbol) {
   element.style.width = `${symbol.width * CELL_SIZE}px`;
   element.style.height = `${symbol.height * CELL_SIZE}px`;
   element.style.backgroundImage = `url("symbols/${symbol.file}")`;
-  element.setAttribute("aria-label", symbol.name);
+  element.setAttribute("aria-label", symbol.name || symbol.file);
 
   return element;
 }
@@ -234,10 +231,10 @@ function createPaletteItem(symbol) {
 
   button.type = "button";
   button.className = "palette-symbol";
-  button.title = symbol.name;
+  button.title = symbol.name || symbol.file;
 
   image.src = `symbols/${symbol.file}`;
-  image.alt = symbol.name;
+  image.alt = symbol.name || symbol.file;
 
   button.appendChild(image);
   button.addEventListener("click", () => {
@@ -284,11 +281,23 @@ function setupPaletteToggles() {
 }
 
 async function loadSymbols() {
-  const response = await fetch("data/symbols.json");
-  const data = await response.json();
+  const embedded = window.SYMBOLS_DATA;
 
-  symbolsData = Object.values(data).flat();
-  buildPalettes(symbolsData);
+  if (embedded && typeof embedded === "object") {
+    symbolsData = Object.values(embedded).flat();
+    buildPalettes(symbolsData);
+    return;
+  }
+
+  try {
+    const response = await fetch("data/symbols.json?v=20260404-3", { cache: "no-store" });
+    const data = await response.json();
+
+    symbolsData = Object.values(data).flat();
+    buildPalettes(symbolsData);
+  } catch (error) {
+    console.error("記号データを読み込めませんでした", error);
+  }
 }
 
 function setupControls() {
