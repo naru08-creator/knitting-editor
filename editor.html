@@ -1,75 +1,63 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>編み図エディタ</title>
-
-  <!-- あとで style.css を読み込む -->
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-  <!-- グリッドサイズ入力 -->
   <div id="controls">
-    横：<input id="cols" type="number" value="20">
-    縦：<input id="rows" type="number" value="20">
+    目数 <input id="cols" type="number" value="20">
+    段数 <input id="rows" type="number" value="20">
     <button id="makeGrid">グリッドを作る</button>
   </div>
 
-<!-- Undo / Redo / 消しゴム / 保存 / 印刷 -->
-<div id="undo-redo-controls">
-  <button id="undoBtn" class="ur-btn">⟵ Undo</button>
-  <button id="redoBtn" class="ur-btn">Redo ⟶</button>
-  <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
+  <div id="undo-redo-controls">
+    <button id="undoBtn" class="ur-btn">Undo</button>
+    <button id="redoBtn" class="ur-btn">Redo</button>
+    <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
+    <button id="saveBtn" class="ur-btn">保存</button>
+    <button id="printBtn" class="ur-btn">印刷</button>
+  </div>
 
-  <!-- 追加 -->
-  <button id="saveBtn" class="ur-btn">保存</button>
-  <button id="printBtn" class="ur-btn">印刷</button>
-</div>
-
-  <!-- グリッド本体（右に段数） -->
   <div id="grid-wrapper">
-    <div id="grid"></div>
+    <div id="grid-area">
+      <div id="grid"></div>
+      <div id="rowNumbers"></div>
+    </div>
     <div id="colNumbers"></div>
   </div>
 
-  <!-- 下側の目数 -->
-  <div id="rowNumbers"></div>
-
-  <!-- パレット -->
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-1">▶ 1マス</button>
+    <button class="toggle-btn" data-target="palette-1">1マス</button>
     <div id="palette-1" class="palette-content"></div>
   </div>
 
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w2">▶ 横2マス</button>
+    <button class="toggle-btn" data-target="palette-w2">幅2マス</button>
     <div id="palette-w2" class="palette-content"></div>
   </div>
 
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w3">▶ 横3マス</button>
+    <button class="toggle-btn" data-target="palette-w3">幅3マス</button>
     <div id="palette-w3" class="palette-content"></div>
   </div>
 
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w4">▶ 横4マス</button>
+    <button class="toggle-btn" data-target="palette-w4">幅4マス</button>
     <div id="palette-w4" class="palette-content"></div>
   </div>
 
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-h2">▶ 縦2マス</button>
+    <button class="toggle-btn" data-target="palette-h2">高さ2マス</button>
     <div id="palette-h2" class="palette-content"></div>
   </div>
 
   <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-h3">▶ 縦3マス</button>
+    <button class="toggle-btn" data-target="palette-h3">高さ3マス</button>
     <div id="palette-h3" class="palette-content"></div>
   </div>
 
-  <!-- あとで editor.js を読み込む -->
   <script src="editor.js"></script>
-
 </body>
 </html>

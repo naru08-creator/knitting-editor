@@ -1,5 +1,4 @@
-/* 全体の基本設定 */
-body {
+﻿body {
   background: #e7eef3;
   font-family: "Inter", "Noto Sans JP", sans-serif;
   color: #333;
@@ -7,7 +6,6 @@ body {
   margin: 0;
 }
 
-/* グリッドサイズ入力 */
 #controls {
   display: flex;
   gap: 10px;
@@ -37,7 +35,6 @@ button {
   font-weight: 600;
 }
 
-/* Undo / Redo / 消しゴム / 保存 / 印刷 */
 #undo-redo-controls {
   text-align: center;
   margin-bottom: 20px;
@@ -69,7 +66,6 @@ button {
   box-shadow: 0 1px 3px rgba(0,0,0,0.10);
 }
 
-/* 消しゴムだけ色を変える */
 .ur-btn.eraser {
   background: #b48c8c;
 }
@@ -78,15 +74,26 @@ button {
   background: #c79d9d;
 }
 
-/* グリッド本体 */
+.ur-btn.active {
+  background: #8c5a5a;
+}
+
 #grid-wrapper {
   display: flex;
-  gap: 8px;
   justify-content: center;
-  margin-bottom: 10px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+#grid-area {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 #grid {
+  position: relative;
   display: inline-grid;
   background: white;
   padding: 10px;
@@ -94,7 +101,6 @@ button {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* グリッドの1マス */
 .cell {
   width: 24px;
   height: 24px;
@@ -102,13 +108,29 @@ button {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  cursor: pointer;
 }
 
-/* 下の目数 */
+.placed-symbol {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
 #rowNumbers {
   display: grid;
-  justify-content: center;
-  margin-bottom: 20px;
+  justify-content: start;
+  padding: 0 10px;
+  margin-top: 6px;
+}
+
+#colNumbers {
+  display: grid;
+  align-content: start;
+  padding-top: 10px;
 }
 
 #rowNumbers div,
@@ -119,7 +141,6 @@ button {
   line-height: 24px;
 }
 
-/* パレット */
 .palette-group {
   margin-bottom: 10px;
 }
@@ -167,37 +188,37 @@ button {
   opacity: 1;
 }
 
-/* パレット画像 */
+.palette-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+}
+
+.palette-symbol.selected {
+  border-color: #5f7f96;
+}
+
+.palette-symbol img {
+  display: block;
+}
+
 #palette-1 img,
 #palette-w2 img,
 #palette-w3 img,
 #palette-w4 img {
   height: 32px;
-  cursor: pointer;
-  background: white;
-  padding: 2px;
-  border-radius: 4px;
 }
 
 #palette-h2 img {
   height: 64px;
   width: 32px;
-  cursor: pointer;
-  background: white;
-  padding: 2px;
-  border-radius: 4px;
 }
 
 #palette-h3 img {
   height: 96px;
   width: 32px;
-  cursor: pointer;
-  background: white;
-  padding: 2px;
-  border-radius: 4px;
-}
-
-img.selected {
-  outline: 2px solid #5f7f96;
-  border-radius: 4px;
 }
