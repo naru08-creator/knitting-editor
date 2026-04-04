@@ -5,8 +5,8 @@
     { "name": "伏せ目", "file": "huseme.png", "width": 1, "height": 1 },
     { "name": "すべり目", "file": "suberime.png", "width": 1, "height": 2 },
     { "name": "すべり目裏", "file": "suberimeura.png", "width": 1, "height": 2 },
-    { "name": "うき目", "file": "ukime.png", "width": 1, "height": 2 },
-    { "name": "うき目裏", "file": "ukimeura.png", "width": 1, "height": 2 }
+    { "name": "うき目裏", "file": "ukimeura.png", "width": 1, "height": 2 },
+    { "name": "かけ目", "file": "kakeme.png", "width": 1, "height": 1 },
     { "name": "かけ目", "file": "kakeme.png", "width": 1, "height": 1 }
   ],
 
