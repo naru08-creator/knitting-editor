@@ -63,17 +63,28 @@
   }
 
   /* ★ 新しいパレット分類の CSS（これだけでOK） */
-  #palette-1,
-  #palette-w2,
-  #palette-w3,
-  #palette-w4,
-  #palette-h2,
-  #palette-h3 {
-    margin-top: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+ #palette-1 img,
+#palette-w2 img,
+#palette-w3 img,
+#palette-w4 img,
+#palette-h2 img,
+#palette-h3 img {
+  cursor: pointer;
+
+  /* ★ 等倍表示（縮小しない） */
+  width: auto;
+  height: auto;
+
+  /* ★ パレットが崩れないように最大サイズだけ設定（必要なら調整OK） */
+  max-width: 64px;
+  max-height: 64px;
+
+  /* 見やすさ向上（任意） */
+  background: white;
+  padding: 2px;
+  border-radius: 4px;
+}
+
 
   #palette-1 img,
   #palette-w2 img,
