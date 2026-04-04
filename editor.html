@@ -279,14 +279,15 @@ img.selected {
 <script>
 let selectedSymbol = null;
 let isDragging = false;
+let eraserMode = false;
 
-// ★ Undo / Redo 用の履歴
+// Undo / Redo
 let history = [];
 let redoStack = [];
 
-let eraserMode = false;
-
-// ★ 盤面の状態を保存
+// -----------------------------
+// 履歴保存
+// -----------------------------
 function saveHistory() {
   const grid = document.getElementById("grid");
   const state = [];
@@ -299,15 +300,19 @@ function saveHistory() {
       repeat: cell.style.backgroundRepeat,
       symbol: cell.dataset.symbol || "",
       borderLeft: cell.style.borderLeft,
-      borderTop: cell.style.borderTop
+      borderTop: cell.style.borderTop,
+      borderRight: cell.style.borderRight,
+      borderBottom: cell.style.borderBottom
     });
   });
 
   history.push(state);
-  redoStack = []; // 新しい操作をしたら redo は消える
+  redoStack = [];
 }
 
-// ★ 履歴から復元
+// -----------------------------
+// 履歴復元
+// -----------------------------
 function restoreGrid(state) {
   const grid = document.getElementById("grid");
 
@@ -322,56 +327,48 @@ function restoreGrid(state) {
 
     cell.style.borderLeft = cellState.borderLeft;
     cell.style.borderTop = cellState.borderTop;
+    cell.style.borderRight = cellState.borderRight;
+    cell.style.borderBottom = cellState.borderBottom;
   });
 
-  // ★ 記号選択状態は維持、消しゴムは解除
   eraserMode = false;
-  const eraserBtn = document.getElementById("eraserBtn");
-  if (eraserBtn) eraserBtn.classList.remove("active");
+  document.getElementById("eraserBtn").classList.remove("active");
 }
 
-// ★ Undo
+// -----------------------------
+// Undo / Redo
+// -----------------------------
 function undo() {
   if (history.length <= 1) return;
-
-  const current = history.pop();
-  redoStack.push(current);
-
-  const prev = history[history.length - 1];
-  restoreGrid(prev);
+  redoStack.push(history.pop());
+  restoreGrid(history[history.length - 1]);
 }
 
-// ★ Redo
 function redo() {
   if (redoStack.length === 0) return;
-
   const state = redoStack.pop();
   history.push(state);
   restoreGrid(state);
 }
 
-// ★ グリッドの基本線を再計算（消しゴム用）
+// -----------------------------
+// グリッド線（5/10本ごと色分け）
+// -----------------------------
 function applyBaseBorder(cell, r, c) {
-  // まず全部同じ線
   cell.style.border = "1px solid #ddd";
 
   // 縦線（右側）
-  if (c % 10 === 0) {
-    cell.style.borderRight = "1px solid #999"; // 10マスごと濃いグレー
-  } else if (c % 5 === 0) {
-    cell.style.borderRight = "1px solid #ccc"; // 5マスごと薄いグレー
-  }
+  if (c % 10 === 0) cell.style.borderRight = "1px solid #999";
+  else if (c % 5 === 0) cell.style.borderRight = "1px solid #ccc";
 
   // 横線（上側）
-  if (r % 10 === 0) {
-    cell.style.borderTop = "1px solid #999";
-  } else if (r % 5 === 0) {
-    cell.style.borderTop = "1px solid #ccc";
-  }
+  if (r % 10 === 0) cell.style.borderTop = "1px solid #999";
+  else if (r % 5 === 0) cell.style.borderTop = "1px solid #ccc";
 }
 
-
-// ★ 記号を置く処理
+// -----------------------------
+// 記号を置く
+// -----------------------------
 function placeSymbol(cell) {
   if (!selectedSymbol && !eraserMode) return;
 
@@ -385,34 +382,33 @@ function placeSymbol(cell) {
   const r = Math.floor(index / cols);
   const c = index % cols;
 
-  // ★ 上書き禁止（消しゴムでないとき）
-  if (!eraserMode && cell.dataset.symbol) {
-    return;
+  // 上書き禁止（複数マス記号にも対応）
+  if (!eraserMode) {
+    if (cell.dataset.symbol) return;
   }
 
-  // ★ 消しゴムモード
+  // -----------------------------
+  // 消しゴム
+  // -----------------------------
   if (eraserMode) {
     cell.style.backgroundImage = "";
-    cell.style.backgroundSize = "";
-    cell.style.backgroundPosition = "";
-    cell.style.backgroundRepeat = "";
     cell.dataset.symbol = "";
-
-    // ★ 正しい位置情報で線を戻す
     applyBaseBorder(cell, r, c);
-
     saveHistory();
     return;
   }
 
- 
-  // ★ 記号情報（selectedSymbol は img 要素）
-  const symbolImg = selectedSymbol;
-  const w = parseInt(symbolImg.dataset.w || symbolImg.dataset.width || 1);
-  const h = parseInt(symbolImg.dataset.h || symbolImg.dataset.height || 1);
-  const name = symbolImg.dataset.name || symbolImg.alt || "";
+  // -----------------------------
+  // 記号情報
+  // -----------------------------
+  const img = selectedSymbol;
+  const w = parseInt(img.dataset.w || 1);
+  const h = parseInt(img.dataset.h || 1);
+  const name = img.dataset.name;
 
-  // ★ 記号を置く位置（左下基準）
+  // -----------------------------
+  // 記号を置く（左下基準）
+  // -----------------------------
   for (let dy = 0; dy < h; dy++) {
     for (let dx = 0; dx < w; dx++) {
       const rr = r - dy;
@@ -423,90 +419,65 @@ function placeSymbol(cell) {
       const targetIndex = rr * cols + cc;
       const targetCell = cells[targetIndex];
 
-      // ★ 記号画像をセット
-      targetCell.style.backgroundImage = `url(${symbolImg.src})`;
+      // すでに記号があるなら置かない
+      if (targetCell.dataset.symbol) continue;
+
+      targetCell.style.backgroundImage = `url(${img.src})`;
       targetCell.style.backgroundSize = "contain";
       targetCell.style.backgroundRepeat = "no-repeat";
       targetCell.style.backgroundPosition = "center";
-
       targetCell.dataset.symbol = name;
 
-      // ★ 内部線だけ消す（5/10本線は残す）
-      if (dx > 0 &&
-          targetCell.style.borderLeft !== "1px solid #ccc" &&
-          targetCell.style.borderLeft !== "1px solid #999") {
-        targetCell.style.borderLeft = "none";
-      }
-      if (dy > 0 &&
-          targetCell.style.borderTop !== "1px solid #ccc" &&
-          targetCell.style.borderTop !== "1px solid #999") {
-        targetCell.style.borderTop = "none";
-      }
+      // 内部線を消す（太線は残す）
+      if (dx > 0) targetCell.style.borderLeft = "none";
+      if (dy > 0) targetCell.style.borderTop = "none";
     }
   }
 
   saveHistory();
 }
 
-// ★ グリッド作成（下→上、右→左 ＋ 線の色分け ＋ 番号）
+// -----------------------------
+// グリッド作成
+// -----------------------------
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
-
   grid.innerHTML = "";
   grid.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
   grid.style.gridTemplateRows = `repeat(${rows}, 24px)`;
 
-  // ★ セル生成（下→上、右→左）
-  for (let r = rows - 1; r >= 0; r--) {        // 下 → 上
-    for (let c = cols - 1; c >= 0; c--) {      // 右 → 左
-
+  // 下→上、右→左
+  for (let r = rows - 1; r >= 0; r--) {
+    for (let c = cols - 1; c >= 0; c--) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
-      // 基本線＋5/10本ごとの色分け
       applyBaseBorder(cell, r, c);
 
-      // イベント（クリック・ドラッグ・タッチ）
       cell.addEventListener("click", () => placeSymbol(cell));
       cell.addEventListener("mousedown", () => isDragging = true);
       cell.addEventListener("mouseenter", () => {
         if (isDragging) placeSymbol(cell);
       });
 
-      cell.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        isDragging = true;
-        placeSymbol(cell);
-      });
-
-      cell.addEventListener("touchmove", (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (target && target.classList.contains("cell")) {
-          placeSymbol(target);
-        }
-      });
-
       grid.appendChild(cell);
     }
   }
 
-  // ★ 下の番号（右→左）
+  // 下の番号（左→右）
   const rowNumbers = document.getElementById("rowNumbers");
   rowNumbers.innerHTML = "";
   rowNumbers.style.display = "grid";
   rowNumbers.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
 
-  // 下：左→右
-    for (let c = 0; c < cols; c++) {
+  for (let c = 0; c < cols; c++) {
     const num = document.createElement("div");
     num.textContent = c + 1;
     num.style.textAlign = "center";
     rowNumbers.appendChild(num);
   }
 
-  // ★ 右の番号（下→上）
+  // 右の番号（上→下）
   const colNumbers = document.getElementById("colNumbers");
   colNumbers.innerHTML = "";
   colNumbers.style.display = "grid";
@@ -519,116 +490,85 @@ function createGrid(rows, cols) {
     colNumbers.appendChild(num);
   }
 
-  // ★ 初期状態を履歴に入れる
   saveHistory();
 }
 
-// ドラッグ終了
+// -----------------------------
+// イベント
+// -----------------------------
 document.addEventListener("mouseup", () => isDragging = false);
-document.addEventListener("touchend", () => isDragging = false);
 
-// グリッド生成ボタン
 document.getElementById("makeGrid").addEventListener("click", () => {
-  if (!confirm("今の編み図は消えて、新しいグリッドを作ります。続けますか？")) {
-    return;
-  }
-
-  const rows = parseInt(document.getElementById("rows").value);
-  const cols = parseInt(document.getElementById("cols").value);
-  createGrid(rows, cols);
+  if (!confirm("今の編み図は消えて新しいグリッドになります。続けますか？")) return;
+  createGrid(
+    parseInt(document.getElementById("rows").value),
+    parseInt(document.getElementById("cols").value)
+  );
 });
 
 createGrid(20, 20);
 
+// -----------------------------
 // パレット読み込み
+// -----------------------------
 async function loadPalette() {
-  const p1 = document.getElementById("palette-1");
-  const p2 = document.getElementById("palette-w2");
-  const p3 = document.getElementById("palette-w3");
-  const p4 = document.getElementById("palette-w4");
-  const pH2 = document.getElementById("palette-h2");
-  const pH3 = document.getElementById("palette-h3");
+  const groups = {
+    "1": document.getElementById("palette-1"),
+    "2": document.getElementById("palette-w2"),
+    "3": document.getElementById("palette-w3"),
+    "4": document.getElementById("palette-w4"),
+    "h2": document.getElementById("palette-h2"),
+    "h3": document.getElementById("palette-h3")
+  };
 
-  try {
-    const res = await fetch("data/symbols.json");
-    const symbols = await res.json();
+  const res = await fetch("data/symbols.json");
+  const symbols = await res.json();
 
-    p1.innerHTML = p2.innerHTML = p3.innerHTML = p4.innerHTML = "";
-    pH2.innerHTML = pH3.innerHTML = "";
+  for (const category in symbols) {
+    symbols[category].forEach(sym => {
+      const img = document.createElement("img");
+      img.src = `symbols/${sym.file}`;
+      img.dataset.w = sym.width;
+      img.dataset.h = sym.height;
+      img.dataset.name = sym.name;
 
-    for (const category in symbols) {
-      symbols[category].forEach(sym => {
-        const img = document.createElement("img");
-        img.src = `symbols/${sym.file}`;
-        img.alt = sym.name;
-        img.title = sym.name;
-
-        // data 属性にサイズ情報を持たせる
-        img.dataset.w = sym.width || 1;
-        img.dataset.h = sym.height || 1;
-        img.dataset.name = sym.name;
-
-        img.addEventListener("click", () => {
-          // 既存選択解除
-          document.querySelectorAll(".palette-content img").forEach(i => i.classList.remove("selected"));
-          img.classList.add("selected");
-
-          // 記号選択
-          selectedSymbol = img;
-
-          // 消しゴム解除
-          eraserMode = false;
-          const eraserBtn = document.getElementById("eraserBtn");
-          if (eraserBtn) eraserBtn.classList.remove("active");
-        });
-
-        if (sym.width === 1 && sym.height === 1) p1.appendChild(img);
-        else if (sym.width === 2 && sym.height === 1) p2.appendChild(img);
-        else if (sym.width === 3 && sym.height === 1) p3.appendChild(img);
-        else if (sym.width === 4 && sym.height === 1) p4.appendChild(img);
-        else if (sym.height === 2) pH2.appendChild(img);
-        else if (sym.height === 3) pH3.appendChild(img);
+      img.addEventListener("click", () => {
+        document.querySelectorAll(".palette-content img").forEach(i => i.classList.remove("selected"));
+        img.classList.add("selected");
+        selectedSymbol = img;
+        eraserMode = false;
+        document.getElementById("eraserBtn").classList.remove("active");
       });
-    }
 
-  } catch (e) {
-    p1.innerHTML = "パレットの読み込みに失敗しました";
+      if (sym.height > 1) groups["h" + sym.height].appendChild(img);
+      else groups[sym.width].appendChild(img);
+    });
   }
 }
 
 loadPalette();
 
+// -----------------------------
 // パレット開閉
+// -----------------------------
 document.querySelectorAll(".toggle-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    const targetId = btn.dataset.target;
-    const content = document.getElementById(targetId);
-
-    content.classList.toggle("open");
+    const target = document.getElementById(btn.dataset.target);
+    target.classList.toggle("open");
     btn.classList.toggle("open");
   });
 });
 
-// ★ キーボードショートカット
-document.addEventListener("keydown", (e) => {
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key === "z") undo();
-    if (e.key === "y") redo();
-    if (e.shiftKey && (e.key === "Z" || e.key === "z")) redo();
-  }
-});
-
-document.getElementById("undoBtn").addEventListener("click", undo);
-document.getElementById("redoBtn").addEventListener("click", redo);
-
-// ★ 消しゴムボタン
+// -----------------------------
+// 消しゴム
+// -----------------------------
 document.getElementById("eraserBtn").addEventListener("click", () => {
   eraserMode = !eraserMode;
-
   const btn = document.getElementById("eraserBtn");
+
   if (eraserMode) {
     btn.classList.add("active");
-    selectedSymbol = null; // 記号選択を解除
+    selectedSymbol = null;
     document.querySelectorAll(".palette-content img").forEach(i => i.classList.remove("selected"));
   } else {
     btn.classList.remove("active");
