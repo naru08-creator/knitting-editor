@@ -133,20 +133,23 @@
   font-weight: 600;
 }
 
+/* パレットの中身（閉じた状態） */
 .palette-content {
-  display: none; /* ← 初期状態は折りたたみ */
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
   margin-top: 8px;
+
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-/* 折りたたみアニメーション */
-.palette-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.35s ease;
-  opacity: 0;
+/* 開いた状態 */
+.palette-content.open {
+  max-height: 500px;
+  opacity: 1;
 }
 
 /* 開いた状態 */
