@@ -116,6 +116,66 @@
     outline: 2px solid #5f7f96;
     border-radius: 4px;
   }
+
+.palette-group {
+  margin-bottom: 10px;
+}
+
+.toggle-btn {
+  width: 100%;
+  text-align: left;
+  background: #5f7f96;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.palette-content {
+  display: none; /* ← 初期状態は折りたたみ */
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 折りたたみアニメーション */
+.palette-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
+  opacity: 0;
+}
+
+/* 開いた状態 */
+.palette-content.open {
+  max-height: 500px; /* 中身より少し大きければOK */
+  opacity: 1;
+}
+
+/* ボタンのアイコン（▶）をCSSで作る */
+.toggle-btn {
+  position: relative;
+  padding-left: 24px; /* アイコン分の余白 */
+}
+
+/* ▶ アイコン */
+.toggle-btn::before {
+  content: "▶";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  transition: transform 0.25s ease;
+}
+
+/* ▼ に変わる（回転アニメーション） */
+.toggle-btn.open::before {
+  transform: translateY(-50%) rotate(90deg);
+}
+
 </style>
 
 </head>
@@ -132,26 +192,87 @@
   <div id="grid"></div>
 </div>
 
-<h3>1マス</h3>
-<div id="palette-1"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-1">▶ 1マス</button>
+  <div id="palette-1" class="palette-content"></div>
+</div>
 
-<h3>横2マス</h3>
-<div id="palette-w2"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-w2">▶ 横2マス</button>
+  <div id="palette-w2" class="palette-content"></div>
+</div>
 
-<h3>横3マス</h3>
-<div id="palette-w3"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-w3">▶ 横3マス</button>
+  <div id="palette-w3" class="palette-content"></div>
+</div>
 
-<h3>横4マス</h3>
-<div id="palette-w4"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-w4">▶ 横4マス</button>
+  <div id="palette-w4" class="palette-content"></div>
+</div>
 
-<h3>縦2マス</h3>
-<div id="palette-h2"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-h2">▶ 縦2マス</button>
+  <div id="palette-h2" class="palette-content"></div>
+</div>
 
-<h3>縦3マス</h3>
-<div id="palette-h3"></div>
+<div class="palette-group">
+  <button class="toggle-btn" data-target="palette-h3">▶ 縦3マス</button>
+  <div id="palette-h3" class="palette-content"></div>
+</div>
 
 <script>
 let selectedSymbol = null;
+let isDragging = false; // ← ドラッグ状態
+
+function placeSymbol(cell) {
+  if (!selectedSymbol) return;
+
+  const w = selectedSymbol.width;
+  const h = selectedSymbol.height;
+
+  const grid = document.getElementById("grid");
+  const cols = parseInt(document.getElementById("cols").value);
+  const rows = parseInt(document.getElementById("rows").value);
+
+  const index = Array.from(grid.children).indexOf(cell);
+  const row = Math.floor(index / cols);
+  const col = index % cols;
+
+  // はみ出し防止
+  if (col + w > cols || row + h > rows) return;
+
+  // ★ 上書き禁止（衝突判定）
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) {
+      const targetIndex = (row + dy) * cols + (col + dx);
+      const targetCell = grid.children[targetIndex];
+
+      if (targetCell.dataset.owner) {
+        return; // すでに記号がある → 置かない
+      }
+    }
+  }
+
+  // ★ 記号を置く処理
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) {
+      const targetIndex = (row + dy) * cols + (col + dx);
+      const targetCell = grid.children[targetIndex];
+
+      targetCell.style.backgroundImage = `url(symbols/${selectedSymbol.file})`;
+      targetCell.style.backgroundSize = `${w * 24}px ${h * 24}px`;
+      targetCell.style.backgroundPosition = `${-dx * 24}px ${-dy * 24}px`;
+      targetCell.style.backgroundRepeat = "no-repeat";
+
+      if (dx > 0) targetCell.style.borderLeft = "none";
+      if (dy > 0) targetCell.style.borderTop = "none";
+
+      targetCell.dataset.owner = `${row}-${col}`;
+    }
+  }
+}
 
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
@@ -165,33 +286,20 @@ function createGrid(rows, cols) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
+      // ★ クリック入力
       cell.addEventListener("click", () => {
-        if (!selectedSymbol) return;
+        placeSymbol(cell);
+      });
 
-        const w = selectedSymbol.width;
-        const h = selectedSymbol.height;
+      // ★ ドラッグ開始
+      cell.addEventListener("mousedown", () => {
+        isDragging = true;
+      });
 
-        const index = Array.from(grid.children).indexOf(cell);
-        const row = Math.floor(index / cols);
-        const col = index % cols;
-
-        if (col + w > cols || row + h > rows) return;
-
-        for (let dy = 0; dy < h; dy++) {
-          for (let dx = 0; dx < w; dx++) {
-            const targetIndex = (row + dy) * cols + (col + dx);
-            const targetCell = grid.children[targetIndex];
-
-            targetCell.style.backgroundImage = `url(symbols/${selectedSymbol.file})`;
-            targetCell.style.backgroundSize = `${w * 24}px ${h * 24}px`;
-            targetCell.style.backgroundPosition = `${-dx * 24}px ${-dy * 24}px`;
-            targetCell.style.backgroundRepeat = "no-repeat";
-
-            if (dx > 0) targetCell.style.borderLeft = "none";
-            if (dy > 0) targetCell.style.borderTop = "none";
-
-            targetCell.dataset.owner = `${row}-${col}`;
-          }
+      // ★ ドラッグ中にセルに入ったら置く
+      cell.addEventListener("mouseenter", () => {
+        if (isDragging) {
+          placeSymbol(cell);
         }
       });
 
@@ -199,6 +307,11 @@ function createGrid(rows, cols) {
     }
   }
 }
+
+// ★ マウスを離したらドラッグ終了
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+});
 
 document.getElementById("makeGrid").addEventListener("click", () => {
   createGrid(
@@ -258,6 +371,7 @@ async function loadPalette() {
 
 loadPalette();
 </script>
+
 
 </body>
 </html>
