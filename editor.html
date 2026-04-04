@@ -13,7 +13,6 @@
     margin: 0;
   }
 
-  /* ① メニュー */
   #controls {
     display: flex;
     gap: 10px;
@@ -43,11 +42,6 @@
     font-weight: 600;
   }
 
-  button:hover {
-    background: #4e6c82;
-  }
-
-  /* ② キャンバス */
   #canvas-area {
     text-align: center;
   }
@@ -65,9 +59,9 @@
     height: 24px;
     border: 1px solid #cfd8df;
     box-sizing: border-box;
+    background-size: cover;
   }
 
-  /* ③ パレット */
   #palette-normal,
   #palette-tall,
   #palette-taller {
@@ -77,23 +71,9 @@
     gap: 8px;
   }
 
-  #palette-normal img {
-    height: 32px;
-    width: auto;
-    cursor: pointer;
-  }
-
-  #palette-tall img {
-    height: 48px;
-    width: auto;
-    cursor: pointer;
-  }
-
-  #palette-taller img {
-    height: 64px;
-    width: auto;
-    cursor: pointer;
-  }
+  #palette-normal img { height: 32px; cursor: pointer; }
+  #palette-tall img { height: 48px; cursor: pointer; }
+  #palette-taller img { height: 64px; cursor: pointer; }
 
   img.selected {
     outline: 2px solid #5f7f96;
@@ -104,22 +84,19 @@
 
 <body>
 
-  <!-- ① メニュー -->
-  <div id="controls">
-    横：<input id="cols" type="number" value="20">
-    縦：<input id="rows" type="number" value="20">
-    <button id="makeGrid">グリッドを作る</button>
-  </div>
+<div id="controls">
+  横：<input id="cols" type="number" value="20">
+  縦：<input id="rows" type="number" value="20">
+  <button id="makeGrid">グリッドを作る</button>
+</div>
 
-  <!-- ② キャンバス -->
-  <div id="canvas-area">
-    <div id="grid"></div>
-  </div>
+<div id="canvas-area">
+  <div id="grid"></div>
+</div>
 
-  <!-- ③ パレット -->
-  <div id="palette-normal"></div>
-  <div id="palette-tall"></div>
-  <div id="palette-taller"></div>
+<div id="palette-normal"></div>
+<div id="palette-tall"></div>
+<div id="palette-taller"></div>
 
 <script>
 let selectedSymbol = null;
@@ -136,15 +113,39 @@ function createGrid(rows, cols) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
+      // ★ 複数マス記号を置く処理（横線・縦線消し対応）
       cell.addEventListener("click", () => {
         if (!selectedSymbol) return;
 
-        cell.innerHTML = "";
-        const img = document.createElement("img");
-        img.src = `symbols/${selectedSymbol.file}`;
-        img.style.width = "100%";
-        img.style.height = "100%";
-        cell.appendChild(img);
+        const w = selectedSymbol.width;
+        const h = selectedSymbol.height;
+
+        const index = Array.from(grid.children).indexOf(cell);
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+
+        if (col + w > cols || row + h > rows) return;
+
+        for (let dy = 0; dy < h; dy++) {
+          for (let dx = 0; dx < w; dx++) {
+            const targetIndex = (row + dy) * cols + (col + dx);
+            const targetCell = grid.children[targetIndex];
+
+            // ★ 記号を背景として敷く（縮まない）
+            targetCell.style.backgroundImage = `url(symbols/${selectedSymbol.file})`;
+            targetCell.style.backgroundSize = `${w * 24}px ${h * 24}px`;
+            targetCell.style.backgroundPosition = `${-dx * 24}px ${-dy * 24}px`;
+            targetCell.style.backgroundRepeat = "no-repeat";
+
+            // ★ 横方向の線を消す
+            if (dx > 0) targetCell.style.borderLeft = "none";
+
+            // ★ 縦方向の線を消す
+            if (dy > 0) targetCell.style.borderTop = "none";
+
+            targetCell.dataset.owner = `${row}-${col}`;
+          }
+        }
       });
 
       grid.appendChild(cell);
@@ -174,7 +175,6 @@ async function loadPalette() {
     paletteTall.innerHTML = "";
     paletteTaller.innerHTML = "";
 
-    // ① JSON の順番どおりに normal に全部並べる
     const allImages = [];
 
     for (const category in symbols) {
@@ -195,15 +195,14 @@ async function loadPalette() {
       });
     }
 
-    // ② 画像読み込み後に縦横比で tall / taller に移動
     allImages.forEach(({ img, sym }) => {
       img.onload = () => {
         const ratio = img.naturalHeight / img.naturalWidth;
 
         if (ratio > 2.5) {
-          paletteTaller.appendChild(img); // height=3
+          paletteTaller.appendChild(img);
         } else if (ratio > 1.2) {
-          paletteTall.appendChild(img);   // height=2
+          paletteTall.appendChild(img);
         }
       };
     });
@@ -219,5 +218,4 @@ loadPalette();
 
 </body>
 </html>
-
 
