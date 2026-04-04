@@ -219,10 +219,6 @@ img.selected {
   background: #c79d9d;
 }
 
-.cell:nth-child(5n) {
-  background-color: #f3f6f8;
-}
-
 </style>
 
 </head>
@@ -356,16 +352,24 @@ function redo() {
 
 // ★ グリッドの基本線を再計算（消しゴム用）
 function applyBaseBorder(cell, r, c) {
+  // まず全部同じ線
   cell.style.border = "1px solid #ddd";
 
-  // 5本ごとに薄グレー
-  if (c % 5 === 0) cell.style.borderRight = "1px solid #ccc";
-  if (r % 5 === 0) cell.style.borderTop = "1px solid #ccc";
+  // 縦線（右側）
+  if (c % 10 === 0) {
+    cell.style.borderRight = "1px solid #999"; // 10マスごと濃いグレー
+  } else if (c % 5 === 0) {
+    cell.style.borderRight = "1px solid #ccc"; // 5マスごと薄いグレー
+  }
 
-  // 10本ごとに濃グレー
-  if (c % 10 === 0) cell.style.borderRight = "1px solid #999";
-  if (r % 10 === 0) cell.style.borderTop = "1px solid #999";
+  // 横線（上側）
+  if (r % 10 === 0) {
+    cell.style.borderTop = "1px solid #999";
+  } else if (r % 5 === 0) {
+    cell.style.borderTop = "1px solid #ccc";
+  }
 }
+
 
 // ★ 記号を置く処理
 function placeSymbol(cell) {
@@ -381,6 +385,11 @@ function placeSymbol(cell) {
   const r = Math.floor(index / cols);
   const c = index % cols;
 
+  // ★ 上書き禁止（消しゴムでないとき）
+  if (!eraserMode && cell.dataset.symbol) {
+    return;
+  }
+
   // ★ 消しゴムモード
   if (eraserMode) {
     cell.style.backgroundImage = "";
@@ -389,13 +398,14 @@ function placeSymbol(cell) {
     cell.style.backgroundRepeat = "";
     cell.dataset.symbol = "";
 
-    // 線を元に戻す
+    // ★ 正しい位置情報で線を戻す
     applyBaseBorder(cell, r, c);
 
     saveHistory();
     return;
   }
 
+ 
   // ★ 記号情報（selectedSymbol は img 要素）
   const symbolImg = selectedSymbol;
   const w = parseInt(symbolImg.dataset.w || symbolImg.dataset.width || 1);
@@ -488,9 +498,10 @@ function createGrid(rows, cols) {
   rowNumbers.style.display = "grid";
   rowNumbers.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
 
-  for (let c = cols - 1; c >= 0; c--) {
+  // 下：左→右
+    for (let c = 0; c < cols; c++) {
     const num = document.createElement("div");
-    num.textContent = cols - c;
+    num.textContent = c + 1;
     num.style.textAlign = "center";
     rowNumbers.appendChild(num);
   }
@@ -501,9 +512,9 @@ function createGrid(rows, cols) {
   colNumbers.style.display = "grid";
   colNumbers.style.gridTemplateRows = `repeat(${rows}, 24px)`;
 
-  for (let r = rows - 1; r >= 0; r--) {
+  for (let r = 0; r < rows; r++) {
     const num = document.createElement("div");
-    num.textContent = rows - r;
+    num.textContent = r + 1;
     num.style.textAlign = "center";
     colNumbers.appendChild(num);
   }
@@ -518,6 +529,10 @@ document.addEventListener("touchend", () => isDragging = false);
 
 // グリッド生成ボタン
 document.getElementById("makeGrid").addEventListener("click", () => {
+  if (!confirm("今の編み図は消えて、新しいグリッドを作ります。続けますか？")) {
+    return;
+  }
+
   const rows = parseInt(document.getElementById("rows").value);
   const cols = parseInt(document.getElementById("cols").value);
   createGrid(rows, cols);
