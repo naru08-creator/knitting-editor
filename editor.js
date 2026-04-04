@@ -61,9 +61,7 @@ function snapshotPlacements() {
     id: placement.id,
     row: placement.row,
     col: placement.col,
-    symbol: placement.symbol,
-    cells: placement.cells.map((cell) => ({ ...cell })),
-    element: null
+    symbol: placement.symbol
   }));
 }
 
@@ -130,36 +128,7 @@ function buildNumberLabels(rows, cols) {
   }
 }
 
-function restorePlacements(records) {
-  records.forEach((record) => {
-    const cells = getPlacementCells(record.row, record.col, record.symbol);
-    if (!cells) return;
-
-    const occupied = cells.some((cell) => occupiedCells.has(getCellKey(cell.row, cell.col)));
-    if (occupied) return;
-
-    const restored = {
-      id: record.id,
-      row: record.row,
-      col: record.col,
-      symbol: record.symbol,
-      cells,
-      element: null
-    };
-
-    renderPlacement(restored);
-  });
-}
-
-function createGrid(rows, cols, options = {}) {
-  const preservedPlacements = options.preservePlacements ? snapshotPlacements() : [];
-
-  currentRows = rows;
-  currentCols = cols;
-  clearPlacements();
-  resetHistory();
-  stopPointerDrawing();
-
+function buildGridShell(rows, cols) {
   const gridCells = getGridCells();
   const gridOverlay = getGridOverlay();
 
@@ -188,9 +157,32 @@ function createGrid(rows, cols, options = {}) {
       gridCells.appendChild(cell);
     }
   }
+}
 
+function restorePlacementList(records) {
+  records.forEach((record) => {
+    placeSymbol(record.row, record.col, record.symbol, {
+      id: record.id,
+      recordHistory: false
+    });
+  });
+}
+
+function createGrid(rows, cols, options = {}) {
+  const preservedPlacements = options.preservePlacements ? snapshotPlacements() : [];
+
+  currentRows = rows;
+  currentCols = cols;
+  clearPlacements();
+  stopPointerDrawing();
+
+  buildGridShell(rows, cols);
   buildNumberLabels(rows, cols);
-  restorePlacements(preservedPlacements);
+  restorePlacementList(preservedPlacements);
+
+  if (options.resetHistory !== false) {
+    resetHistory();
+  }
 }
 
 function getPlacementCells(row, col, symbol) {
@@ -563,7 +555,7 @@ function setupControls() {
     const rows = parseInt(document.getElementById("rows").value, 10);
     const cols = parseInt(document.getElementById("cols").value, 10);
 
-    createGrid(rows, cols, { preservePlacements: true });
+    createGrid(rows, cols, { preservePlacements: true, resetHistory: false });
   });
 
   document.getElementById("undoBtn").addEventListener("click", undoAction);
