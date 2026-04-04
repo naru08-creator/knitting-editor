@@ -3,58 +3,69 @@
     { "name": "表目", "file": "omote.png", "width": 1, "height": 1 },
     { "name": "裏目", "file": "urame.png", "width": 1, "height": 1 },
     { "name": "伏せ目", "file": "huseme.png", "width": 1, "height": 1 },
+
     { "name": "すべり目", "file": "suberime.png", "width": 1, "height": 2 },
-    { "name": "すべり目裏", "file": "suberimeura.png", "width": 1, "height": 2 },
-    { "name": "うき目裏", "file": "ukimeura.png", "width": 1, "height": 2 },
-    { "name": "かけ目", "file": "kakeme.png", "width": 1, "height": 1 },
+    { "name": "すべり目（裏）", "file": "suberimeura.png", "width": 1, "height": 2 },
+
+    { "name": "うき目", "file": "ukime.png", "width": 1, "height": 2 },
+    { "name": "うき目（裏）", "file": "ukimeura.png", "width": 1, "height": 2 },
+
     { "name": "かけ目", "file": "kakeme.png", "width": 1, "height": 1 }
   ],
 
   "increase": [
-    { "name": "migimasime", "file": "migimasime.png", "width": 1, "height": 1 },
-    { "name": "migimasimeura", "file": "migimasimeura.png", "width": 1, "height": 1 },
-    { "name": "hidarimasime", "file": "hidarimasime.png", "width": 1, "height": 1 },
-    { "name": "hidarimasimeura", "file": "hidarimasimeura.png", "width": 1, "height": 1 },
-    { "name": "amidasimasime3", "file": "amidasimasime3.png", "width": 1, "height": 1 },
-    { "name": "amidasimasime5", "file": "amidasimasime5.png", "width": 1, "height": 1 }
+    { "name": "右増し目", "file": "migimasime.png", "width": 1, "height": 1 },
+    { "name": "右増し目（裏）", "file": "migimasimeura.png", "width": 1, "height": 1 },
+
+    { "name": "左増し目", "file": "hidarimasime.png", "width": 1, "height": 1 },
+    { "name": "左増し目（裏）", "file": "hidarimasimeura.png", "width": 1, "height": 1 },
+
+    { "name": "編み出し増し目（3目）", "file": "amidasimasime3.png", "width": 1, "height": 1 },
+    { "name": "編み出し増し目（5目）", "file": "amidasimasime5.png", "width": 1, "height": 1 }
   ],
 
   "cross": [
-    { "name": "migimewotoosukousa", "file": "migimewotoosukousa.png", "width": 2, "height": 1 },
-    { "name": "hidarimewotoosukousa", "file": "hidarimewotoosukousa.png", "width": 2, "height": 1 },
+    { "name": "右目を通す交差", "file": "migimewotoosukousa.png", "width": 2, "height": 1 },
+    { "name": "左目を通す交差", "file": "hidarimewotoosukousa.png", "width": 2, "height": 1 },
 
-    { "name": "migiue1mekousa", "file": "migiue1mekousa.png", "width": 2, "height": 1 },
-    { "name": "migiue1mekousaura", "file": "migiue1mekousaura.png", "width": 2, "height": 1 },
-    { "name": "hidariue1mekousa", "file": "hidariue1mekousa.png", "width": 2, "height": 1 },
-    { "name": "hidariue1mekousaura", "file": "hidariue1mekousaura.png", "width": 2, "height": 1 },
+    { "name": "右上1目交差", "file": "migiue1mekousa.png", "width": 2, "height": 1 },
+    { "name": "右上1目交差（裏）", "file": "migiue1mekousaura.png", "width": 2, "height": 1 },
 
-    { "name": "migiue2me1do", "file": "migiue2me1do.png", "width": 1, "height": 1 },
-    { "name": "migiue2me1doura", "file": "migiue2me1doura.png", "width": 1, "height": 1 },
-    { "name": "hidariue2me1do", "file": "hidariue2me1do.png", "width": 1, "height": 1 },
-    { "name": "hidariue2me1doura", "file": "hidariue2me1doura.png", "width": 1, "height": 1 },
+    { "name": "左上1目交差", "file": "hidariue1mekousa.png", "width": 2, "height": 1 },
+    { "name": "左上1目交差（裏）", "file": "hidariue1mekousaura.png", "width": 2, "height": 1 },
 
-    { "name": "migiue2mekousa", "file": "migiue2mekousa.png", "width": 4, "height": 1 },
-    { "name": "hidariue2mekousa", "file": "hidariue2mekousa.png", "width": 4, "height": 1 },
+    { "name": "右上2目1度", "file": "migiue2me1do.png", "width": 1, "height": 1 },
+    { "name": "右上2目1度（裏）", "file": "migiue2me1doura.png", "width": 1, "height": 1 },
 
-    { "name": "migiue2meto1menokousa", "file": "migiue2meto1menokousa.png", "width": 3, "height": 1 },
-    { "name": "migiue2meto1menokousaura", "file": "migiue2meto1menokousaura.png", "width": 3, "height": 1 },
-    { "name": "hidariue2meto1menokousa", "file": "hidariue2meto1menokousa.png", "width": 3, "height": 1 },
-    { "name": "hidariue2meto1menokousaura", "file": "hidariue2meto1menokousaura.png", "width": 3, "height": 1 },
+    { "name": "左上2目1度", "file": "hidariue2me1do.png", "width": 1, "height": 1 },
+    { "name": "左上2目1度（裏）", "file": "hidariue2me1doura.png", "width": 1, "height": 1 },
 
-    { "name": "migiue3me1do", "file": "migiue3me1do.png", "width": 1, "height": 1 },
-    { "name": "migiue3me1doura", "file": "migiue3me1doura.png", "width": 1, "height": 1 },
-    { "name": "hidariue3me1do", "file": "hidariue3me1do.png", "width": 1, "height": 1 },
-    { "name": "hidariue3me1doura", "file": "hidariue3me1doura.png", "width": 1, "height": 1 },
+    { "name": "右上2目交差", "file": "migiue2mekousa.png", "width": 4, "height": 1 },
+    { "name": "左上2目交差", "file": "hidariue2mekousa.png", "width": 4, "height": 1 },
 
-    { "name": "nakaue3me1do", "file": "nakaue3me1do.png", "width": 1, "height": 1 },
-    { "name": "nakaue3me1doura", "file": "nakaue3me1doura.png", "width": 1, "height": 1 }
+    { "name": "右上2目＋1目交差", "file": "migiue2meto1menokousa.png", "width": 3, "height": 1 },
+    { "name": "右上2目＋1目交差（裏）", "file": "migiue2meto1menokousaura.png", "width": 3, "height": 1 },
+
+    { "name": "左上2目＋1目交差", "file": "hidariue2meto1menokousa.png", "width": 3, "height": 1 },
+    { "name": "左上2目＋1目交差（裏）", "file": "hidariue2meto1menokousaura.png", "width": 3, "height": 1 },
+
+    { "name": "右上3目1度", "file": "migiue3me1do.png", "width": 1, "height": 1 },
+    { "name": "右上3目1度（裏）", "file": "migiue3me1doura.png", "width": 1, "height": 1 },
+
+    { "name": "左上3目1度", "file": "hidariue3me1do.png", "width": 1, "height": 1 },
+    { "name": "左上3目1度（裏）", "file": "hidariue3me1doura.png", "width": 1, "height": 1 },
+
+    { "name": "中上3目1度", "file": "nakaue3me1do.png", "width": 1, "height": 1 },
+    { "name": "中上3目1度（裏）", "file": "nakaue3me1doura.png", "width": 1, "height": 1 }
   ],
 
   "special": [
-    { "name": "nejirime", "file": "nejirime.png", "width": 1, "height": 1 },
-    { "name": "nejirimeura", "file": "nejirimeura.png", "width": 1, "height": 1 },
-    { "name": "hikiageme3", "file": "hikiageme3.png", "width": 1, "height": 3 },
-    { "name": "hikiageme3ura", "file": "hikiageme3ura.png", "width": 1, "height": 3 },
-    { "name": "kabuseme", "file": "kabuseme.png", "width": 3, "height": 1 }
+    { "name": "ねじり目", "file": "nejirime.png", "width": 1, "height": 1 },
+    { "name": "ねじり目（裏）", "file": "nejirimeura.png", "width": 1, "height": 1 },
+
+    { "name": "引き上げ目（3目）", "file": "hikiageme3.png", "width": 1, "height": 3 },
+    { "name": "引き上げ目（3目・裏）", "file": "hikiageme3ura.png", "width": 1, "height": 3 },
+
+    { "name": "かぶせ目", "file": "kabuseme.png", "width": 3, "height": 1 }
   ]
 }
