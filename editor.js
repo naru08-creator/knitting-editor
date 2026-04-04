@@ -58,6 +58,10 @@ function applyBaseBorder(cell, r, c) {
   if (r % 5 === 0) cell.style.borderTop = "1px solid #999";
 }
 
+function getGridCells() {
+  return document.getElementById("grid-cells");
+}
+
 function getGridOverlay() {
   return document.getElementById("grid-overlay");
 }
@@ -98,12 +102,19 @@ function createGrid(rows, cols) {
   currentCols = cols;
   clearPlacements();
 
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "<div id=\"grid-overlay\"></div>";
-  grid.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
-  grid.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
-  grid.style.width = `${cols * CELL_SIZE}px`;
-  grid.style.height = `${rows * CELL_SIZE}px`;
+  const gridCells = getGridCells();
+  const gridOverlay = getGridOverlay();
+
+  gridCells.innerHTML = "";
+  gridOverlay.innerHTML = "";
+
+  gridCells.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
+  gridCells.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
+  gridCells.style.width = `${cols * CELL_SIZE}px`;
+  gridCells.style.height = `${rows * CELL_SIZE}px`;
+
+  gridOverlay.style.width = `${cols * CELL_SIZE}px`;
+  gridOverlay.style.height = `${rows * CELL_SIZE}px`;
 
   for (let r = rows - 1; r >= 0; r--) {
     for (let c = cols - 1; c >= 0; c--) {
@@ -118,7 +129,7 @@ function createGrid(rows, cols) {
       applyBaseBorder(cell, r, c);
       cell.addEventListener("click", handleCellClick);
 
-      grid.appendChild(cell);
+      gridCells.appendChild(cell);
     }
   }
 

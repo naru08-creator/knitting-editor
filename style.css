@@ -92,13 +92,18 @@ button {
   align-items: stretch;
 }
 
-#grid {
+#grid-shell {
   position: relative;
-  display: inline-grid;
   background: white;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#grid-cells {
+  position: relative;
+  z-index: 2;
+  display: grid;
 }
 
 #grid-overlay {
@@ -109,8 +114,6 @@ button {
 }
 
 .cell {
-  position: relative;
-  z-index: 2;
   width: 24px;
   height: 24px;
   box-sizing: border-box;
