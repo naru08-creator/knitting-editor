@@ -71,13 +71,33 @@
 #palette-h3 img {
   cursor: pointer;
 
-  /* ★ 等倍表示（縮小しない） */
+/* 横1〜4マス → 小さめでOK（高さ固定） */
+#palette-1 img,
+#palette-w2 img,
+#palette-w3 img,
+#palette-w4 img {
+  height: 32px;
   width: auto;
-  height: auto;
+  cursor: pointer;
+}
 
-  /* ★ パレットが崩れないように最大サイズだけ設定（必要なら調整OK） */
-  max-width: none;
+/* 縦2マス → 等倍表示（縮小しない） */
+#palette-h2 img {
+  height: auto;
+  width: auto;
   max-height: none;
+  max-width: none;
+  cursor: pointer;
+}
+
+/* 縦3マス → 等倍表示（縮小しない） */
+#palette-h3 img {
+  height: auto;
+  width: auto;
+  max-height: none;
+  max-width: none;
+  cursor: pointer;
+}
 
   /* 見やすさ向上（任意） */
   background: white;
