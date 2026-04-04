@@ -152,6 +152,73 @@ img.selected {
   opacity: 1;
 }
 
+#undo-redo-controls {
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Undo / Redo ボタン */
+.ur-btn {
+  background: #6f8fa6; /* くすみブルー */
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+}
+
+/* ホバーでふわっと */
+.ur-btn:hover {
+  background: #7fa0b8;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+}
+
+/* 押したときに少し沈む */
+.ur-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+
+/* Undo / Redo / Eraser の共通デザイン */
+.ur-btn {
+  background: #6f8fa6; /* くすみブルー */
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+}
+
+.ur-btn:hover {
+  background: #7fa0b8;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+}
+
+.ur-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+
+/* 消しゴムだけ色を少し変える（やさしいピンクグレー） */
+.ur-btn.eraser {
+  background: #b48c8c;
+}
+
+.ur-btn.eraser:hover {
+  background: #c79d9d;
+}
+
 </style>
 
 </head>
@@ -162,6 +229,17 @@ img.selected {
   横：<input id="cols" type="number" value="20">
   縦：<input id="rows" type="number" value="20">
   <button id="makeGrid">グリッドを作る</button>
+</div>
+
+<div id="undo-redo-controls">
+  <button id="undoBtn" class="ur-btn">⟵ Undo</button>
+  <button id="redoBtn" class="ur-btn">Redo ⟶</button>
+</div>
+
+<div id="undo-redo-controls">
+  <button id="undoBtn" class="ur-btn">⟵ Undo</button>
+  <button id="redoBtn" class="ur-btn">Redo ⟶</button>
+  <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
 </div>
 
 <div id="canvas-area">
@@ -200,9 +278,88 @@ img.selected {
 
 <script>
 let selectedSymbol = null;
-let isDragging = false; // ← ドラッグ状態
+let isDragging = false;
 
+// ★ Undo / Redo 用の履歴
+let history = [];
+let redoStack = [];
+
+// ★ 盤面の状態を保存
+function saveHistory() {
+  const grid = document.getElementById("grid");
+  const state = [];
+
+  Array.from(grid.children).forEach(cell => {
+    state.push({
+      bg: cell.style.backgroundImage,
+      size: cell.style.backgroundSize,
+      pos: cell.style.backgroundPosition,
+      repeat: cell.style.backgroundRepeat,
+      owner: cell.dataset.owner || null,
+      borderLeft: cell.style.borderLeft,
+      borderTop: cell.style.borderTop
+    });
+  });
+
+  history.push(state);
+  redoStack = []; // 新しい操作をしたら redo は消える
+}
+
+// ★ 履歴から復元
+function restoreGrid(state) {
+  const grid = document.getElementById("grid");
+
+  state.forEach((cellState, i) => {
+    const cell = grid.children[i];
+
+    cell.style.backgroundImage = cellState.bg;
+    cell.style.backgroundSize = cellState.size;
+    cell.style.backgroundPosition = cellState.pos;
+    cell.style.backgroundRepeat = cellState.repeat;
+    cell.dataset.owner = cellState.owner;
+
+    cell.style.borderLeft = cellState.borderLeft;
+    cell.style.borderTop = cellState.borderTop;
+  });
+}
+
+// ★ Undo
+function undo() {
+  if (history.length <= 1) return;
+
+  const current = history.pop();
+  redoStack.push(current);
+
+  const prev = history[history.length - 1];
+  restoreGrid(prev);
+}
+
+// ★ Redo
+function redo() {
+  if (redoStack.length === 0) return;
+
+  const state = redoStack.pop();
+  history.push(state);
+  restoreGrid(state);
+}
+
+// ★ 記号を置く処理
 function placeSymbol(cell) {
+
+  // ★ 消しゴムモードならセルを消す（最優先）
+  if (eraserMode) {
+    cell.style.backgroundImage = "";
+    cell.style.backgroundSize = "";
+    cell.style.backgroundPosition = "";
+    cell.style.backgroundRepeat = "";
+    cell.style.borderLeft = "";
+    cell.style.borderTop = "";
+    delete cell.dataset.owner;
+
+    saveHistory();
+    return;
+  }
+
   if (!selectedSymbol) return;
 
   const w = selectedSymbol.width;
@@ -219,19 +376,16 @@ function placeSymbol(cell) {
   // はみ出し防止
   if (col + w > cols || row + h > rows) return;
 
-  // ★ 上書き禁止（衝突判定）
+  // 上書き禁止
   for (let dy = 0; dy < h; dy++) {
     for (let dx = 0; dx < w; dx++) {
       const targetIndex = (row + dy) * cols + (col + dx);
       const targetCell = grid.children[targetIndex];
-
-      if (targetCell.dataset.owner) {
-        return; // すでに記号がある → 置かない
-      }
+      if (targetCell.dataset.owner) return;
     }
   }
 
-  // ★ 記号を置く処理
+  // 記号を置く
   for (let dy = 0; dy < h; dy++) {
     for (let dx = 0; dx < w; dx++) {
       const targetIndex = (row + dy) * cols + (col + dx);
@@ -248,8 +402,11 @@ function placeSymbol(cell) {
       targetCell.dataset.owner = `${row}-${col}`;
     }
   }
+
+  saveHistory();
 }
 
+// ★ グリッド作成
 function createGrid(rows, cols) {
   const grid = document.getElementById("grid");
 
@@ -262,33 +419,46 @@ function createGrid(rows, cols) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
-      // ★ クリック入力
-      cell.addEventListener("click", () => {
+      // クリック
+      cell.addEventListener("click", () => placeSymbol(cell));
+
+      // ドラッグ開始（マウス）
+      cell.addEventListener("mousedown", () => isDragging = true);
+
+      // ドラッグ中（マウス）
+      cell.addEventListener("mouseenter", () => {
+        if (isDragging) placeSymbol(cell);
+      });
+
+      // ★ タッチ開始（iPad 指 OK）
+      cell.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        isDragging = true;
         placeSymbol(cell);
       });
 
-      // ★ ドラッグ開始
-      cell.addEventListener("mousedown", () => {
-        isDragging = true;
-      });
-
-      // ★ ドラッグ中にセルに入ったら置く
-      cell.addEventListener("mouseenter", () => {
-        if (isDragging) {
-          placeSymbol(cell);
+      // ★ タッチ移動（iPad 指 OK）
+      cell.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target && target.classList.contains("cell")) {
+          placeSymbol(target);
         }
       });
 
       grid.appendChild(cell);
     }
   }
+
+  saveHistory(); // 初期状態を履歴に入れる
 }
 
-// ★ マウスを離したらドラッグ終了
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-});
+// ドラッグ終了
+document.addEventListener("mouseup", () => isDragging = false);
+document.addEventListener("touchend", () => isDragging = false);
 
+// グリッド生成
 document.getElementById("makeGrid").addEventListener("click", () => {
   createGrid(
     parseInt(document.getElementById("rows").value),
@@ -298,6 +468,7 @@ document.getElementById("makeGrid").addEventListener("click", () => {
 
 createGrid(20, 20);
 
+// パレット読み込み
 async function loadPalette() {
   const p1 = document.getElementById("palette-1");
   const p2 = document.getElementById("palette-w2");
@@ -310,12 +481,8 @@ async function loadPalette() {
     const res = await fetch("data/symbols.json");
     const symbols = await res.json();
 
-    p1.innerHTML = "";
-    p2.innerHTML = "";
-    p3.innerHTML = "";
-    p4.innerHTML = "";
-    pH2.innerHTML = "";
-    pH3.innerHTML = "";
+    p1.innerHTML = p2.innerHTML = p3.innerHTML = p4.innerHTML = "";
+    pH2.innerHTML = pH3.innerHTML = "";
 
     for (const category in symbols) {
       symbols[category].forEach(sym => {
@@ -331,32 +498,58 @@ async function loadPalette() {
         });
 
         if (sym.width === 1 && sym.height === 1) p1.appendChild(img);
-        else if (sym.width === 2 && sym.height === 1) p2.appendChild(img);
-        else if (sym.width === 3 && sym.height === 1) p3.appendChild(img);
-        else if (sym.width === 4 && sym.height === 1) p4.appendChild(img);
-        else if (sym.width === 1 && sym.height === 2) pH2.appendChild(img);
-        else if (sym.width === 1 && sym.height === 3) pH3.appendChild(img);
+        else if (sym.width === 2) p2.appendChild(img);
+        else if (sym.width === 3) p3.appendChild(img);
+        else if (sym.width === 4) p4.appendChild(img);
+        else if (sym.height === 2) pH2.appendChild(img);
+        else if (sym.height === 3) pH3.appendChild(img);
       });
     }
 
   } catch (e) {
     p1.innerHTML = "パレットの読み込みに失敗しました";
-    console.error(e);
   }
 }
 
 loadPalette();
 
-// ★ パレット開閉処理
+// パレット開閉
 document.querySelectorAll(".toggle-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const targetId = btn.dataset.target;
     const content = document.getElementById(targetId);
 
-    // 開閉クラスの切り替え
     content.classList.toggle("open");
     btn.classList.toggle("open");
   });
+});
+
+// ★ キーボードショートカット
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === "z") undo();
+    if (e.key === "y") redo();
+    if (e.shiftKey && e.key === "Z") redo();
+  }
+});
+
+document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("redoBtn").addEventListener("click", redo);
+
+let eraserMode = false;
+
+// ★ 消しゴムボタン
+document.getElementById("eraserBtn").addEventListener("click", () => {
+  eraserMode = !eraserMode;
+
+  // ボタンの見た目を切り替え
+  const btn = document.getElementById("eraserBtn");
+  if (eraserMode) {
+    btn.style.background = "#d19a9a"; // ON のとき少し明るく
+    selectedSymbol = null; // 記号選択を解除
+  } else {
+    btn.style.background = ""; // CSS に戻す
+  }
 });
 
 </script>
