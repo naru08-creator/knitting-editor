@@ -346,6 +346,19 @@ async function loadPalette() {
 }
 
 loadPalette();
+
+// ★ パレット開閉処理
+document.querySelectorAll(".toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.dataset.target;
+    const content = document.getElementById(targetId);
+
+    // 開閉クラスの切り替え
+    content.classList.toggle("open");
+    btn.classList.toggle("open");
+  });
+});
+
 </script>
 
 
