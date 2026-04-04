@@ -127,7 +127,6 @@ function createGrid(rows, cols) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
 
-      // ★ 複数マス記号を置く処理（横線・縦線消し対応）
       cell.addEventListener("click", () => {
         if (!selectedSymbol) return;
 
@@ -145,16 +144,12 @@ function createGrid(rows, cols) {
             const targetIndex = (row + dy) * cols + (col + dx);
             const targetCell = grid.children[targetIndex];
 
-            // ★ 記号を背景として敷く（縮まない）
             targetCell.style.backgroundImage = `url(symbols/${selectedSymbol.file})`;
             targetCell.style.backgroundSize = `${w * 24}px ${h * 24}px`;
             targetCell.style.backgroundPosition = `${-dx * 24}px ${-dy * 24}px`;
             targetCell.style.backgroundRepeat = "no-repeat";
 
-            // ★ 横方向の線を消す
             if (dx > 0) targetCell.style.borderLeft = "none";
-
-            // ★ 縦方向の線を消す
             if (dy > 0) targetCell.style.borderTop = "none";
 
             targetCell.dataset.owner = `${row}-${col}`;
@@ -188,7 +183,6 @@ async function loadPalette() {
     const res = await fetch("data/symbols.json");
     const symbols = await res.json();
 
-    // 全部クリア
     p1.innerHTML = "";
     p2.innerHTML = "";
     p3.innerHTML = "";
@@ -209,7 +203,6 @@ async function loadPalette() {
           selectedSymbol = sym;
         });
 
-        // ★ 分類ルール
         if (sym.width === 1 && sym.height === 1) p1.appendChild(img);
         else if (sym.width === 2 && sym.height === 1) p2.appendChild(img);
         else if (sym.width === 3 && sym.height === 1) p3.appendChild(img);
@@ -221,24 +214,6 @@ async function loadPalette() {
 
   } catch (e) {
     p1.innerHTML = "パレットの読み込みに失敗しました";
-    console.error(e);
-  }
-}
-
-    allImages.forEach(({ img, sym }) => {
-      img.onload = () => {
-        const ratio = img.naturalHeight / img.naturalWidth;
-
-        if (ratio > 2.5) {
-          paletteTaller.appendChild(img);
-        } else if (ratio > 1.2) {
-          paletteTall.appendChild(img);
-        }
-      };
-    });
-
-  } catch (e) {
-    paletteNormal.innerHTML = "パレットの読み込みに失敗しました";
     console.error(e);
   }
 }
