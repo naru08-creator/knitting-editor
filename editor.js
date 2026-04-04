@@ -1,4 +1,5 @@
 ﻿const CELL_SIZE = 24;
+const SYMBOL_INSET = 1;
 
 let currentRows = 20;
 let currentCols = 20;
@@ -155,14 +156,16 @@ function canPlaceSymbol(row, col, symbol) {
 
 function createSymbolElement(row, col, symbol) {
   const element = document.createElement("div");
-  const left = (currentCols - (col + symbol.width - 1)) * CELL_SIZE;
-  const top = (currentRows - (row + symbol.height - 1)) * CELL_SIZE;
+  const left = (currentCols - (col + symbol.width - 1)) * CELL_SIZE + SYMBOL_INSET;
+  const top = (currentRows - (row + symbol.height - 1)) * CELL_SIZE + SYMBOL_INSET;
+  const width = symbol.width * CELL_SIZE - SYMBOL_INSET * 2;
+  const height = symbol.height * CELL_SIZE - SYMBOL_INSET * 2;
 
   element.className = "placed-symbol";
   element.style.left = `${left}px`;
   element.style.top = `${top}px`;
-  element.style.width = `${symbol.width * CELL_SIZE}px`;
-  element.style.height = `${symbol.height * CELL_SIZE}px`;
+  element.style.width = `${width}px`;
+  element.style.height = `${height}px`;
   element.style.backgroundImage = `url("symbols/${symbol.file}")`;
   element.setAttribute("aria-label", symbol.name || symbol.file);
 
