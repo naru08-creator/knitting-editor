@@ -6,121 +6,104 @@
 
 <style>
   body {
-    background: #e7eef3;
-    font-family: "Inter", "Noto Sans JP", sans-serif;
-    color: #333;
-    padding: 20px;
-    margin: 0;
-  }
+  background: #e7eef3;
+  font-family: "Inter", "Noto Sans JP", sans-serif;
+  color: #333;
+  padding: 20px;
+  margin: 0;
+}
 
-  #controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    background: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    width: fit-content;
-    margin: 0 auto 20px auto;
-  }
+#controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: fit-content;
+  margin: 0 auto 20px auto;
+}
 
-  input {
-    width: 60px;
-    padding: 4px 6px;
-    border: 1px solid #bbb;
-    border-radius: 6px;
-  }
+input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+}
 
-  button {
-    background: #5f7f96;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-  }
+button {
+  background: #5f7f96;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
 
-  #canvas-area {
-    text-align: center;
-  }
+#canvas-area {
+  text-align: center;
+}
 
-  #grid {
-    display: inline-grid;
-    background: white;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
+#grid {
+  display: inline-grid;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
 
-  .cell {
-    width: 24px;
-    height: 24px;
-    border: 1px solid #cfd8df;
-    box-sizing: border-box;
-    background-size: cover;
-  }
+.cell {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #cfd8df;
+  box-sizing: border-box;
+  background-size: cover;
+}
 
-  /* ------------------------------
-     パレットの表示ルール（完全版）
-     ------------------------------ */
+/* パレット画像 */
+#palette-1 img,
+#palette-w2 img,
+#palette-w3 img,
+#palette-w4 img {
+  height: 32px;
+  width: auto;
+  cursor: pointer;
+  background: white;
+  padding: 2px;
+  border-radius: 4px;
+}
 
-  /* 横1〜4マス → 小さめでOK（高さ固定） */
-  #palette-1 img,
-  #palette-w2 img,
-  #palette-w3 img,
-  #palette-w4 img {
-    height: 32px;
-    width: auto;
-    cursor: pointer;
-    background: white;
-    padding: 2px;
-    border-radius: 4px;
-  }
+#palette-h2 img {
+  height: 64px;
+  width: 32px;
+  cursor: pointer;
+  background: white;
+  padding: 2px;
+  border-radius: 4px;
+}
 
-  /* 縦2マス → 等倍表示（縮小しない） */
-  #palette-h2 img {
-    height: 64px;
-    width: 32px;
-    cursor: pointer;
-    background: white;
-    padding: 2px;
-    border-radius: 4px;
-  }
+#palette-h3 img {
+  height: 96px;
+  width: 32px;
+  cursor: pointer;
+  background: white;
+  padding: 2px;
+  border-radius: 4px;
+}
 
-  /* 縦3マス → 等倍表示（縮小しない） */
-  #palette-h3 img {
-    height: 96px;
-    width: 32px;
-    cursor: pointer;
-    background: white;
-    padding: 2px;
-    border-radius: 4px;
-  }
+img.selected {
+  outline: 2px solid #5f7f96;
+  border-radius: 4px;
+}
 
-  /* パレットの並びレイアウト */
-  #palette-1,
-  #palette-w2,
-  #palette-w3,
-  #palette-w4,
-  #palette-h2,
-  #palette-h3 {
-    margin-top: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  img.selected {
-    outline: 2px solid #5f7f96;
-    border-radius: 4px;
-  }
-
+/* パレットグループ */
 .palette-group {
   margin-bottom: 10px;
 }
 
+/* ボタン */
 .toggle-btn {
   width: 100%;
   text-align: left;
@@ -131,37 +114,8 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-}
-
-/* パレットの中身（閉じた状態） */
-.palette-content {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height 0.35s ease, opacity 0.35s ease;
-  margin-top: 8px;
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* 開いた状態 */
-.palette-content.open {
-  max-height: 500px;
-  opacity: 1;
-}
-
-/* 開いた状態 */
-.palette-content.open {
-  max-height: 500px; /* 中身より少し大きければOK */
-  opacity: 1;
-}
-
-/* ボタンのアイコン（▶）をCSSで作る */
-.toggle-btn {
   position: relative;
-  padding-left: 24px; /* アイコン分の余白 */
+  padding-left: 24px;
 }
 
 /* ▶ アイコン */
@@ -174,9 +128,28 @@
   transition: transform 0.25s ease;
 }
 
-/* ▼ に変わる（回転アニメーション） */
+/* ▼ に回転 */
 .toggle-btn.open::before {
   transform: translateY(-50%) rotate(90deg);
+}
+
+/* パレット中身（閉じた状態） */
+.palette-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
+  margin-top: 8px;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 開いた状態（1回だけ定義） */
+.palette-content.open {
+  max-height: 500px;
+  opacity: 1;
 }
 
 </style>
