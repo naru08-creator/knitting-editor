@@ -401,7 +401,12 @@ function startPointerDrawing(event) {
     return;
   }
 
-  const cell = event.target.closest(".cell");
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const cell = target.closest(".cell");
   if (!(cell instanceof HTMLElement)) {
     return;
   }
@@ -410,13 +415,17 @@ function startPointerDrawing(event) {
   activePointerId = event.pointerId;
   lastPaintedCellKey = null;
 
-  cell.setPointerCapture?.(event.pointerId);
   event.preventDefault();
   paintCell(cell);
 }
 
 function continuePointerDrawing(event) {
   if (!isPointerDrawing || event.pointerId !== activePointerId) {
+    return;
+  }
+
+  if (event.pointerType === "mouse" && (event.buttons & 1) === 0) {
+    stopPointerDrawing(event);
     return;
   }
 
@@ -529,11 +538,9 @@ function setupControls() {
 
   const gridCells = getGridCells();
   gridCells.addEventListener("pointerdown", startPointerDrawing);
-  gridCells.addEventListener("pointermove", continuePointerDrawing);
-  gridCells.addEventListener("pointerup", stopPointerDrawing);
-  gridCells.addEventListener("pointercancel", stopPointerDrawing);
-  gridCells.addEventListener("pointerleave", continuePointerDrawing);
+  document.addEventListener("pointermove", continuePointerDrawing);
   document.addEventListener("pointerup", stopPointerDrawing);
+  document.addEventListener("pointercancel", stopPointerDrawing);
 
   updateHistoryButtons();
 }
