@@ -90,11 +90,11 @@ function toggleEraser() {
   document.getElementById("eraserBtn").classList.toggle("active", eraserMode);
 }
 
-function applyBaseBorder(cell, r, c) {
+function applyBaseBorder(cell, rowNumber, colNumber) {
   cell.style.border = "1px solid #ddd";
 
-  if (c % 5 === 0) cell.style.borderRight = "1px solid #999";
-  if (r % 5 === 0) cell.style.borderTop = "1px solid #999";
+  if (colNumber % 5 === 0) cell.style.borderRight = "1px solid #999";
+  if (rowNumber % 5 === 0) cell.style.borderTop = "1px solid #999";
 }
 
 function clearPlacements() {
@@ -111,9 +111,9 @@ function buildNumberLabels(rows, cols) {
   rowNumbers.innerHTML = "";
   rowNumbers.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
 
-  for (let c = cols - 1; c >= 0; c--) {
+  for (let c = cols; c >= 1; c--) {
     const num = document.createElement("div");
-    num.textContent = c + 1;
+    num.textContent = c;
     rowNumbers.appendChild(num);
   }
 
@@ -121,9 +121,9 @@ function buildNumberLabels(rows, cols) {
   colNumbers.innerHTML = "";
   colNumbers.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
 
-  for (let r = rows - 1; r >= 0; r--) {
+  for (let r = rows; r >= 1; r--) {
     const num = document.createElement("div");
-    num.textContent = r + 1;
+    num.textContent = r;
     colNumbers.appendChild(num);
   }
 }
@@ -143,17 +143,15 @@ function buildGridShell(rows, cols) {
   gridOverlay.style.width = `${cols * CELL_SIZE}px`;
   gridOverlay.style.height = `${rows * CELL_SIZE}px`;
 
-  for (let r = rows - 1; r >= 0; r--) {
-    for (let c = cols - 1; c >= 0; c--) {
+  for (let rowNumber = rows; rowNumber >= 1; rowNumber--) {
+    for (let colNumber = cols; colNumber >= 1; colNumber--) {
       const cell = document.createElement("div");
-      const row = r + 1;
-      const col = c + 1;
 
       cell.classList.add("cell");
-      cell.dataset.row = String(row);
-      cell.dataset.col = String(col);
+      cell.dataset.row = String(rowNumber);
+      cell.dataset.col = String(colNumber);
 
-      applyBaseBorder(cell, r, c);
+      applyBaseBorder(cell, rowNumber, colNumber);
       gridCells.appendChild(cell);
     }
   }
