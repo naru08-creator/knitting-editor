@@ -40,6 +40,7 @@ let shapeRedoStack = [];
 let imageCache = new Map();
 let disabledCells = new Set();
 let activeShapeBatch = null;
+let activeDrawBatch = null;
 
 function getCellKey(row, col) {
   return `${row}:${col}`;
@@ -92,6 +93,7 @@ function resetHistory() {
   shapeUndoStack = [];
   shapeRedoStack = [];
   activeShapeBatch = null;
+  activeDrawBatch = null;
   updateHistoryButtons();
 }
 
@@ -99,6 +101,45 @@ function pushHistoryEntry(entry) {
   undoStack.push(entry);
   redoStack = [];
   updateHistoryButtons();
+}
+
+function clonePlacementRecord(record) {
+  return {
+    id: record.id,
+    row: record.row,
+    col: record.col,
+    symbol: record.symbol,
+    cells: record.cells.map((cell) => ({ ...cell })),
+    element: null
+  };
+}
+
+function startDrawBatch() {
+  activeDrawBatch = {
+    actions: []
+  };
+}
+
+function recordDrawBatchAction(type, placement) {
+  if (!activeDrawBatch || !placement) return;
+  activeDrawBatch.actions.push({
+    type,
+    placement: clonePlacementRecord(placement)
+  });
+}
+
+function finishDrawBatch() {
+  if (!activeDrawBatch) return;
+
+  const { actions } = activeDrawBatch;
+  activeDrawBatch = null;
+
+  if (actions.length === 0) {
+    return;
+  }
+
+  pushHistoryEntry({ type: "batch", actions });
+  updateDirtyState();
 }
 
 function startShapeBatch() {
@@ -505,7 +546,9 @@ function pastePatternAt(row, col) {
   let skipped = 0;
 
   clipboardPattern.records.forEach((record) => {
-    const placed = placeSymbol(row + record.rowOffset, col + record.colOffset, record.symbol);
+    const placed = placeSymbol(row + record.rowOffset, col + record.colOffset, record.symbol, {
+      recordHistory: false
+    });
     if (placed) {
       pasted += 1;
     } else {
@@ -718,8 +761,12 @@ function placeSymbol(row, col, symbol, options = {}) {
   renderPlacement(record);
 
   if (options.recordHistory !== false) {
-    pushHistoryEntry({ type: "place", placement: { ...record, cells: record.cells.map((cell) => ({ ...cell })), element: null } });
+    pushHistoryEntry({ type: "place", placement: clonePlacementRecord(record) });
     updateDirtyState();
+  }
+
+  if (options.recordBatch !== false) {
+    recordDrawBatchAction("place", record);
   }
 
   return record;
@@ -749,6 +796,10 @@ function removePlacementById(id, options = {}) {
   if (options.recordHistory !== false) {
     pushHistoryEntry({ type: "remove", placement: snapshot });
     updateDirtyState();
+  }
+
+  if (options.recordBatch !== false) {
+    recordDrawBatchAction("remove", snapshot);
   }
 
   return snapshot;
@@ -782,7 +833,15 @@ function undoAction() {
     return;
   }
 
-  if (entry.type === "place") {
+  if (entry.type === "batch") {
+    [...entry.actions].reverse().forEach((action) => {
+      if (action.type === "place") {
+        removePlacementById(action.placement.id, { recordHistory: false, recordBatch: false });
+      } else if (action.type === "remove") {
+        restorePlacement(action.placement);
+      }
+    });
+  } else if (entry.type === "place") {
     removePlacementById(entry.placement.id, { recordHistory: false });
   } else if (entry.type === "remove") {
     restorePlacement(entry.placement);
@@ -800,7 +859,15 @@ function redoAction() {
     return;
   }
 
-  if (entry.type === "place") {
+  if (entry.type === "batch") {
+    entry.actions.forEach((action) => {
+      if (action.type === "place") {
+        restorePlacement(action.placement);
+      } else if (action.type === "remove") {
+        removePlacementById(action.placement.id, { recordHistory: false, recordBatch: false });
+      }
+    });
+  } else if (entry.type === "place") {
     restorePlacement(entry.placement);
   } else if (entry.type === "remove") {
     removePlacementById(entry.placement.id, { recordHistory: false });
@@ -892,7 +959,7 @@ function paintCell(cell) {
 
   if (eraserMode) {
     if (occupiedId) {
-      removePlacementById(occupiedId);
+      removePlacementById(occupiedId, { recordHistory: false });
     }
     return;
   }
@@ -901,7 +968,7 @@ function paintCell(cell) {
     return;
   }
 
-  placeSymbol(row, col, selectedSymbol);
+  placeSymbol(row, col, selectedSymbol, { recordHistory: false });
 }
 
 function startPointerDrawing(event) {
@@ -948,6 +1015,8 @@ function startPointerDrawing(event) {
 
   if (shapeMode) {
     startShapeBatch();
+  } else {
+    startDrawBatch();
   }
 
   event.preventDefault();
@@ -990,6 +1059,8 @@ function stopPointerDrawing(event = null) {
 
   if (shapeMode) {
     finishShapeBatch();
+  } else {
+    finishDrawBatch();
   }
 
   if (patternSelectMode) {
