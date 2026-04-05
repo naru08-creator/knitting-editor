@@ -94,6 +94,10 @@ button {
   font-size: 18px;
 }
 
+#settingsPanel[hidden] {
+  display: none;
+}
+
 #settingsPanel {
   width: min(360px, calc(100% - 40px));
   margin: 0 auto 20px auto;
@@ -135,12 +139,14 @@ button {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 20px;
+  max-width: 100%;
 }
 
 #grid-area {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  min-width: 0;
 }
 
 #grid-shell {
@@ -210,6 +216,8 @@ button {
   box-shadow: 0 2px 6px rgba(0,0,0,0.06);
   padding: 12px;
   align-self: flex-start;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .palette-group {
@@ -328,10 +336,7 @@ body[data-palette-position="left"] #palette-dock {
 }
 
 body[data-palette-position="bottom"] .palette-content,
-body[data-palette-position="top"] .palette-content {
-  flex-direction: row;
-}
-
+body[data-palette-position="top"] .palette-content,
 body[data-palette-position="left"] .palette-content,
 body[data-palette-position="right"] .palette-content {
   flex-direction: row;
@@ -344,6 +349,12 @@ body[data-palette-position="right"] .palette-content {
 @media (max-width: 900px) {
   body {
     padding: 14px;
+  }
+
+  #controls {
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   #editor-layout {
