@@ -5,6 +5,8 @@ const NUMBER_GAP = 6;
 const NUMBER_FONT = "16px 'Noto Sans JP', sans-serif";
 const LIGHT_GRID_COLOR = "#d0d0d0";
 const HEAVY_GRID_COLOR = "#999999";
+const PALETTE_POSITION_KEY = "amizu-palette-position";
+const PALETTE_POSITIONS = new Set(["auto", "top", "bottom", "left", "right"]);
 
 let currentRows = 20;
 let currentCols = 20;
@@ -14,6 +16,7 @@ let placementId = 0;
 let isPointerDrawing = false;
 let activePointerId = null;
 let lastPaintedCellKey = null;
+let palettePositionPreference = "auto";
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -567,6 +570,96 @@ function setupPaletteToggles() {
   });
 }
 
+function getAutoPalettePosition() {
+  return window.innerWidth > window.innerHeight ? "right" : "bottom";
+}
+
+function applyPalettePosition() {
+  const resolved = palettePositionPreference === "auto" ? getAutoPalettePosition() : palettePositionPreference;
+  document.body.dataset.palettePosition = resolved;
+}
+
+function closeSettingsPanel() {
+  const settingsPanel = document.getElementById("settingsPanel");
+  const settingsBtn = document.getElementById("settingsBtn");
+
+  settingsPanel.hidden = true;
+  settingsBtn.setAttribute("aria-expanded", "false");
+}
+
+function toggleSettingsPanel() {
+  const settingsPanel = document.getElementById("settingsPanel");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const nextHidden = !settingsPanel.hidden;
+
+  settingsPanel.hidden = nextHidden;
+  settingsBtn.setAttribute("aria-expanded", String(!nextHidden));
+}
+
+function setPalettePositionPreference(value) {
+  const nextValue = PALETTE_POSITIONS.has(value) ? value : "auto";
+  palettePositionPreference = nextValue;
+  localStorage.setItem(PALETTE_POSITION_KEY, nextValue);
+  document.getElementById("palettePositionSelect").value = nextValue;
+  applyPalettePosition();
+}
+
+function loadPalettePositionPreference() {
+  const saved = localStorage.getItem(PALETTE_POSITION_KEY);
+  palettePositionPreference = PALETTE_POSITIONS.has(saved) ? saved : "auto";
+  document.getElementById("palettePositionSelect").value = palettePositionPreference;
+  applyPalettePosition();
+}
+
+function handleDocumentClick(event) {
+  const settingsPanel = document.getElementById("settingsPanel");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const target = event.target;
+
+  if (!(target instanceof Node)) {
+    return;
+  }
+
+  if (settingsPanel.hidden) {
+    return;
+  }
+
+  if (settingsPanel.contains(target) || settingsBtn.contains(target)) {
+    return;
+  }
+
+  closeSettingsPanel();
+}
+
+function setupPaletteSettings() {
+  const settingsBtn = document.getElementById("settingsBtn");
+  const palettePositionSelect = document.getElementById("palettePositionSelect");
+
+  loadPalettePositionPreference();
+
+  settingsBtn.addEventListener("click", () => {
+    toggleSettingsPanel();
+  });
+
+  palettePositionSelect.addEventListener("change", (event) => {
+    setPalettePositionPreference(event.target.value);
+  });
+
+  window.addEventListener("resize", () => {
+    if (palettePositionPreference === "auto") {
+      applyPalettePosition();
+    }
+  });
+
+  window.addEventListener("orientationchange", () => {
+    if (palettePositionPreference === "auto") {
+      applyPalettePosition();
+    }
+  });
+
+  document.addEventListener("click", handleDocumentClick);
+}
+
 async function loadSymbols() {
   const embedded = window.SYMBOLS_DATA;
 
@@ -829,6 +922,7 @@ function setupControls() {
 
 async function init() {
   setupControls();
+  setupPaletteSettings();
   setupPaletteToggles();
   createGrid(currentRows, currentCols);
   await loadSymbols();

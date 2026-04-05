@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>編み図エディタ</title>
-  <link rel="stylesheet" href="style.css?v=20260405-3">
+  <link rel="stylesheet" href="style.css?v=20260405-4">
 </head>
 <body>
   <div id="controls">
@@ -20,53 +20,70 @@
     <button id="saveBtn" class="ur-btn">保存</button>
     <button id="pngBtn" class="ur-btn">画像</button>
     <button id="printBtn" class="ur-btn">印刷 / PDF</button>
+    <button id="settingsBtn" class="ur-btn icon-btn" type="button" aria-label="記号メニュー設定" aria-expanded="false">⚙</button>
     <input id="openFileInput" type="file" accept="application/json,.json" hidden>
   </div>
 
-  <div id="grid-wrapper">
-    <div id="grid-area">
-      <div id="grid-shell">
-        <div id="grid-cells"></div>
-        <div id="grid-overlay"></div>
+  <div id="settingsPanel" hidden>
+    <label for="palettePositionSelect">記号メニューの位置</label>
+    <select id="palettePositionSelect">
+      <option value="auto">自動</option>
+      <option value="top">上</option>
+      <option value="bottom">下</option>
+      <option value="left">左</option>
+      <option value="right">右</option>
+    </select>
+    <p id="palettePositionHint">自動では、縦向きは下、横向きは右に表示します。</p>
+  </div>
+
+  <div id="editor-layout">
+    <div id="grid-wrapper">
+      <div id="grid-area">
+        <div id="grid-shell">
+          <div id="grid-cells"></div>
+          <div id="grid-overlay"></div>
+        </div>
+        <div id="rowNumbers"></div>
       </div>
-      <div id="rowNumbers"></div>
+      <div id="colNumbers"></div>
     </div>
-    <div id="colNumbers"></div>
-  </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-1">1マス</button>
-    <div id="palette-1" class="palette-content"></div>
-  </div>
+    <aside id="palette-dock" aria-label="記号メニュー">
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-1">1マス</button>
+        <div id="palette-1" class="palette-content"></div>
+      </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w2">幅2マス</button>
-    <div id="palette-w2" class="palette-content"></div>
-  </div>
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-w2">幅2マス</button>
+        <div id="palette-w2" class="palette-content"></div>
+      </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w3">幅3マス</button>
-    <div id="palette-w3" class="palette-content"></div>
-  </div>
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-w3">幅3マス</button>
+        <div id="palette-w3" class="palette-content"></div>
+      </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-w4">幅4マス</button>
-    <div id="palette-w4" class="palette-content"></div>
-  </div>
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-w4">幅4マス</button>
+        <div id="palette-w4" class="palette-content"></div>
+      </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-h2">高さ2マス</button>
-    <div id="palette-h2" class="palette-content"></div>
-  </div>
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-h2">高さ2マス</button>
+        <div id="palette-h2" class="palette-content"></div>
+      </div>
 
-  <div class="palette-group">
-    <button class="toggle-btn" data-target="palette-h3">高さ3マス</button>
-    <div id="palette-h3" class="palette-content"></div>
+      <div class="palette-group">
+        <button class="toggle-btn" data-target="palette-h3">高さ3マス</button>
+        <div id="palette-h3" class="palette-content"></div>
+      </div>
+    </aside>
   </div>
 
   <div id="printArea" aria-hidden="true"></div>
 
   <script src="data/symbols.js?v=20260404-3"></script>
-  <script src="editor.js?v=20260405-3"></script>
+  <script src="editor.js?v=20260405-4"></script>
 </body>
 </html>
