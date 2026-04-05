@@ -6,6 +6,7 @@ const NUMBER_FONT = "16px 'Noto Sans JP', sans-serif";
 const LIGHT_GRID_COLOR = "#d0d0d0";
 const HEAVY_GRID_COLOR = "#999999";
 const PALETTE_POSITION_KEY = "amizu-palette-position";
+const PENDING_PROJECT_KEY = "amizu-pending-project";
 const PALETTE_POSITIONS = new Set(["auto", "top", "bottom", "left", "right"]);
 
 let currentRows = 20;
@@ -782,10 +783,7 @@ async function drawChartToCanvas() {
   return canvas;
 }
 
-async function openProjectFromFile(file) {
-  const text = await file.text();
-  const project = JSON.parse(text);
-
+function normalizeProject(project) {
   if (!project || typeof project !== "object") {
     throw new Error("JSONファイルの形式が正しくありません。");
   }
@@ -814,12 +812,45 @@ async function openProjectFromFile(file) {
       && Number.isInteger(placement.symbol.width)
       && Number.isInteger(placement.symbol.height));
 
-  document.getElementById("rows").value = String(project.rows);
-  document.getElementById("cols").value = String(project.cols);
+  return {
+    rows: project.rows,
+    cols: project.cols,
+    placements: normalizedPlacements
+  };
+}
 
-  createGrid(project.rows, project.cols, { preservePlacements: false, resetHistory: true });
-  restorePlacementList(normalizedPlacements);
+function loadProject(project) {
+  const normalizedProject = normalizeProject(project);
+
+  document.getElementById("rows").value = String(normalizedProject.rows);
+  document.getElementById("cols").value = String(normalizedProject.cols);
+
+  createGrid(normalizedProject.rows, normalizedProject.cols, { preservePlacements: false, resetHistory: true });
+  restorePlacementList(normalizedProject.placements);
   resetHistory();
+}
+
+async function openProjectFromFile(file) {
+  const text = await file.text();
+  const project = JSON.parse(text);
+  loadProject(project);
+}
+
+function loadPendingProjectFromSession() {
+  const raw = sessionStorage.getItem(PENDING_PROJECT_KEY);
+  if (!raw) return false;
+
+  sessionStorage.removeItem(PENDING_PROJECT_KEY);
+
+  try {
+    const project = JSON.parse(raw);
+    loadProject(project);
+    return true;
+  } catch (error) {
+    console.error(error);
+    alert(error instanceof Error ? error.message : "保存データを読み込めませんでした。");
+    return false;
+  }
 }
 
 async function saveProject() {
@@ -925,7 +956,12 @@ async function init() {
   setupPaletteSettings();
   setupPaletteToggles();
   createGrid(currentRows, currentCols);
+  const loadedPendingProject = loadPendingProjectFromSession();
   await loadSymbols();
+
+  if (loadedPendingProject) {
+    clearSelection();
+  }
 }
 
 init();

@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>編み図エディタ</title>
+  <style>
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 34%),
+        linear-gradient(160deg, #dce7ef 0%, #edf3f7 48%, #d4e1ea 100%);
+      color: #2d3c46;
+      font-family: "Inter", "Noto Sans JP", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .home-card {
+      width: min(760px, 100%);
+      background: rgba(255,255,255,0.9);
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: 0 18px 60px rgba(78, 110, 132, 0.18);
+      backdrop-filter: blur(8px);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      color: #6f8797;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(32px, 6vw, 54px);
+      line-height: 1.05;
+      color: #355064;
+    }
+
+    .lead {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.8;
+      color: #4c6473;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .action-card {
+      border: none;
+      border-radius: 18px;
+      padding: 22px 20px;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      box-shadow: 0 8px 24px rgba(73, 104, 126, 0.12);
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(73, 104, 126, 0.16);
+    }
+
+    .action-card.primary {
+      background: linear-gradient(145deg, #5d839e, #47697f);
+      color: white;
+    }
+
+    .action-card.secondary {
+      background: white;
+      color: #355064;
+    }
+
+    .action-card strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .action-card span {
+      display: block;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .subnote {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #657b89;
+      line-height: 1.7;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px;
+      }
+
+      .home-card {
+        padding: 24px;
+        border-radius: 20px;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="home-card">
+    <p class="eyebrow">AMIZU EDITOR</p>
+    <h1>編み図を、すぐ始める。</h1>
+    <p class="lead">新しい編み図を作ることも、保存した JSON を開いて続きから編集することもできます。</p>
+
+    <div class="actions">
+      <button id="newChartBtn" class="action-card primary" type="button">
+        <strong>新規作成</strong>
+        <span>まっさらなグリッドから編み図を作り始めます。</span>
+      </button>
+
+      <button id="openChartBtn" class="action-card secondary" type="button">
+        <strong>保存データを開く</strong>
+        <span>保存した JSON を読み込んで、エディタで続きから編集します。</span>
+      </button>
+    </div>
+
+    <p class="subnote">トップページから開いた場合も、エディタ画面内の「開く」ボタンから JSON を読み込めます。</p>
+    <input id="homeOpenFileInput" type="file" accept="application/json,.json">
+  </main>
+
+  <script>
+    const PENDING_PROJECT_KEY = "amizu-pending-project";
+
+    function openEditor() {
+      window.location.href = "editor.html";
+    }
+
+    document.getElementById("newChartBtn").addEventListener("click", () => {
+      sessionStorage.removeItem(PENDING_PROJECT_KEY);
+      openEditor();
+    });
+
+    document.getElementById("openChartBtn").addEventListener("click", () => {
+      document.getElementById("homeOpenFileInput").click();
+    });
+
+    document.getElementById("homeOpenFileInput").addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        JSON.parse(text);
+        sessionStorage.setItem(PENDING_PROJECT_KEY, text);
+        openEditor();
+      } catch (error) {
+        console.error(error);
+        alert("JSONファイルを読み込めませんでした。");
+      } finally {
+        event.target.value = "";
+      }
+    });
+  </script>
+</body>
+</html>
