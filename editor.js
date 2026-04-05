@@ -30,8 +30,8 @@ let patternSelectionStart = null;
 let clipboardPattern = null;
 let patternPreviewAnchor = null;
 let patternPastePendingTarget = null;
-let patternFlipH = false;
-let patternFlipV = false;
+let currentProjectName = "amizu-chart.json";
+let currentFileHandle = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -116,8 +116,6 @@ function clonePlacementRecord(record) {
     row: record.row,
     col: record.col,
     symbol: record.symbol,
-    flipH: Boolean(record.flipH),
-    flipV: Boolean(record.flipV),
     cells: record.cells.map((cell) => ({ ...cell })),
     element: null
   };
@@ -214,8 +212,6 @@ function serializeProject() {
     placements: snapshotPlacements().map((placement) => ({
       row: placement.row,
       col: placement.col,
-      flipH: Boolean(placement.flipH),
-      flipV: Boolean(placement.flipV),
       symbol: {
         name: placement.symbol.name,
         file: placement.symbol.file,
@@ -255,6 +251,42 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+async function saveWithFileHandle(blob) {
+  if (!currentFileHandle) {
+    return false;
+  }
+
+  const writable = await currentFileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  return true;
+}
+
+async function saveWithPicker(blob) {
+  if (typeof window.showSaveFilePicker !== "function") {
+    return false;
+  }
+
+  const handle = await window.showSaveFilePicker({
+    suggestedName: currentProjectName,
+    types: [
+      {
+        description: "JSON Files",
+        accept: {
+          "application/json": [".json"]
+        }
+      }
+    ]
+  });
+
+  currentFileHandle = handle;
+  currentProjectName = handle.name || currentProjectName;
+  const writable = await handle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  return true;
+}
+
 function clearSelection() {
   document.querySelectorAll(".palette-symbol.selected").forEach((element) => {
     element.classList.remove("selected");
@@ -281,10 +313,6 @@ function clearPatternPreview() {
 function updatePatternUiState() {
   document.body.classList.toggle("pattern-paste-mode", patternPasteMode);
   const touchPatternBtn = document.getElementById("touchPatternBtn");
-  document.getElementById("patternFlipHBtn").disabled = !clipboardPattern;
-  document.getElementById("patternFlipVBtn").disabled = !clipboardPattern;
-  document.getElementById("patternFlipHBtn").classList.toggle("active", patternFlipH);
-  document.getElementById("patternFlipVBtn").classList.toggle("active", patternFlipV);
   if (touchPatternBtn) {
     touchPatternBtn.classList.toggle("active", patternSelectMode || patternPasteMode);
   }
@@ -300,11 +328,6 @@ function deactivatePatternModes(options = {}) {
     clearPatternSelection();
   }
   updatePatternUiState();
-}
-
-function resetPatternClipboardTransforms() {
-  patternFlipH = false;
-  patternFlipV = false;
 }
 
 function setPatternSelectMode(active) {
@@ -543,9 +566,7 @@ function copyPatternSelection() {
     .map((placement) => ({
       rowOffset: placement.row - patternSelection.minRow,
       colOffset: placement.col - patternSelection.minCol,
-      symbol: placement.symbol,
-      flipH: Boolean(placement.flipH),
-      flipV: Boolean(placement.flipV)
+      symbol: placement.symbol
     }));
 
   if (records.length === 0) {
@@ -559,29 +580,7 @@ function copyPatternSelection() {
     records
   };
 
-  resetPatternClipboardTransforms();
   setPatternPasteMode(true);
-}
-
-function getTransformedClipboardRecords() {
-  if (!clipboardPattern) return [];
-
-  return clipboardPattern.records.map((record) => {
-    const colOffset = patternFlipH
-      ? clipboardPattern.width - record.colOffset - record.symbol.width
-      : record.colOffset;
-    const rowOffset = patternFlipV
-      ? clipboardPattern.height - record.rowOffset - record.symbol.height
-      : record.rowOffset;
-
-    return {
-      rowOffset,
-      colOffset,
-      symbol: record.symbol,
-      flipH: patternFlipH ? !record.flipH : Boolean(record.flipH),
-      flipV: patternFlipV ? !record.flipV : Boolean(record.flipV)
-    };
-  });
 }
 
 function pastePatternAt(row, col) {
@@ -590,11 +589,9 @@ function pastePatternAt(row, col) {
   let pasted = 0;
   let skipped = 0;
 
-  getTransformedClipboardRecords().forEach((record) => {
+  clipboardPattern.records.forEach((record) => {
     const placed = placeSymbol(row + record.rowOffset, col + record.colOffset, record.symbol, {
-      recordHistory: false,
-      flipH: record.flipH,
-      flipV: record.flipV
+      recordHistory: false
     });
     if (placed) {
       pasted += 1;
@@ -622,11 +619,11 @@ function renderPatternPreviewAt(row, col) {
     return;
   }
 
-  getTransformedClipboardRecords().forEach((record) => {
+  clipboardPattern.records.forEach((record) => {
     const targetRow = row + record.rowOffset;
     const targetCol = col + record.colOffset;
     const invalid = !canPlacePatternRecordAt(targetRow, targetCol, record.symbol);
-    previewLayer.appendChild(createPatternPreviewElement(targetRow, targetCol, record.symbol, invalid, record.flipH, record.flipV));
+    previewLayer.appendChild(createPatternPreviewElement(targetRow, targetCol, record.symbol, invalid));
   });
 }
 
@@ -775,22 +772,14 @@ function createSymbolElement(row, col, symbol) {
   return element;
 }
 
-function applyPlacementTransform(element, flipH, flipV) {
-  const scaleX = flipH ? -1 : 1;
-  const scaleY = flipV ? -1 : 1;
-  element.style.transform = `scale(${scaleX}, ${scaleY})`;
-}
-
-function createPatternPreviewElement(row, col, symbol, invalid, flipH = false, flipV = false) {
+function createPatternPreviewElement(row, col, symbol, invalid) {
   const element = createSymbolElement(row, col, symbol);
   element.className = `pattern-preview-symbol${invalid ? " invalid" : ""}`;
-  applyPlacementTransform(element, flipH, flipV);
   return element;
 }
 
 function renderPlacement(record) {
   const element = createSymbolElement(record.row, record.col, record.symbol);
-  applyPlacementTransform(element, record.flipH, record.flipV);
   record.element = element;
   getGridOverlay().appendChild(element);
   placements.set(record.id, record);
@@ -810,8 +799,6 @@ function placeSymbol(row, col, symbol, options = {}) {
     row,
     col,
     symbol,
-    flipH: Boolean(options.flipH),
-    flipV: Boolean(options.flipV),
     cells,
     element: null
   };
@@ -840,8 +827,6 @@ function removePlacementById(id, options = {}) {
     row: placement.row,
     col: placement.col,
     symbol: placement.symbol,
-    flipH: Boolean(placement.flipH),
-    flipV: Boolean(placement.flipV),
     cells: placement.cells.map((cell) => ({ ...cell })),
     element: null
   };
@@ -879,8 +864,6 @@ function restorePlacement(record) {
     row: record.row,
     col: record.col,
     symbol: record.symbol,
-    flipH: Boolean(record.flipH),
-    flipV: Boolean(record.flipV),
     cells: record.cells.map((cell) => ({ ...cell })),
     element: null
   };
@@ -1339,24 +1322,6 @@ function setupTouchPatternControls() {
   });
 }
 
-function togglePatternFlip(direction) {
-  if (!clipboardPattern) {
-    return;
-  }
-
-  if (direction === "horizontal") {
-    patternFlipH = !patternFlipH;
-  } else if (direction === "vertical") {
-    patternFlipV = !patternFlipV;
-  }
-
-  if (patternPasteMode && patternPreviewAnchor) {
-    renderPatternPreviewAt(patternPreviewAnchor.row, patternPreviewAnchor.col);
-  }
-
-  updatePatternUiState();
-}
-
 async function loadSymbols() {
   const embedded = window.SYMBOLS_DATA;
 
@@ -1434,11 +1399,7 @@ async function drawChartToCanvas() {
     const y = gridTop + (currentRows - (placement.row + placement.symbol.height - 1)) * CELL_SIZE + SYMBOL_PADDING;
     const w = placement.symbol.width * CELL_SIZE - SYMBOL_PADDING * 2;
     const h = placement.symbol.height * CELL_SIZE - SYMBOL_PADDING * 2;
-    ctx.save();
-    ctx.translate(x + w / 2, y + h / 2);
-    ctx.scale(placement.flipH ? -1 : 1, placement.flipV ? -1 : 1);
-    ctx.drawImage(image, -w / 2, -h / 2, w, h);
-    ctx.restore();
+    ctx.drawImage(image, x, y, w, h);
   }
 
   for (let row = 1; row <= currentRows; row++) {
@@ -1507,8 +1468,6 @@ function normalizeProject(project) {
       id: `placement-${placementId++}`,
       row: Number(placement.row),
       col: Number(placement.col),
-      flipH: Boolean(placement.flipH),
-      flipV: Boolean(placement.flipV),
       symbol: {
         name: placement.symbol.name || placement.symbol.file,
         file: placement.symbol.file,
@@ -1558,6 +1517,8 @@ function loadProject(project) {
 async function openProjectFromFile(file) {
   const text = await file.text();
   const project = JSON.parse(text);
+  currentProjectName = file.name || currentProjectName;
+  currentFileHandle = null;
   loadProject(project);
 }
 
@@ -1581,7 +1542,13 @@ function loadPendingProjectFromSession() {
 async function saveProject() {
   const project = serializeProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
-  downloadBlob(blob, `amizu-chart-${getTimestampSuffix()}.json`);
+  const saved =
+    await saveWithFileHandle(blob).catch(() => false)
+    || await saveWithPicker(blob).catch(() => false);
+
+  if (!saved) {
+    downloadBlob(blob, currentProjectName || `amizu-chart-${getTimestampSuffix()}.json`);
+  }
   markSavedState();
 }
 
@@ -1649,12 +1616,6 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
-  document.getElementById("patternFlipHBtn").addEventListener("click", () => {
-    togglePatternFlip("horizontal");
-  });
-  document.getElementById("patternFlipVBtn").addEventListener("click", () => {
-    togglePatternFlip("vertical");
-  });
   document.getElementById("homeBtn").addEventListener("click", () => {
     if (hasUnsavedChanges() && !window.confirm("保存していない変更があります。トップページに戻りますか？")) {
       return;
