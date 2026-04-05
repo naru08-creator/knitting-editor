@@ -81,6 +81,10 @@ function getPatternPreviewLayer() {
   return document.getElementById("pattern-preview-layer");
 }
 
+function isDirectPasteReleasePointer(event) {
+  return event.pointerType !== "mouse";
+}
+
 function updateHistoryButtons() {
   document.getElementById("undoBtn").disabled = undoStack.length === 0;
   document.getElementById("redoBtn").disabled = redoStack.length === 0;
@@ -1024,7 +1028,7 @@ function startPointerDrawing(event) {
 
   event.preventDefault();
 
-  if (patternPasteMode && (event.pointerType === "touch" || event.pointerType === "pen")) {
+  if (patternPasteMode && isDirectPasteReleasePointer(event)) {
     return;
   }
 
@@ -1056,7 +1060,7 @@ function continuePointerDrawing(event) {
     return;
   }
 
-  if (patternPasteMode && (event.pointerType === "touch" || event.pointerType === "pen")) {
+  if (patternPasteMode && isDirectPasteReleasePointer(event)) {
     event.preventDefault();
     renderPatternPreviewAt(Number(cell.dataset.row), Number(cell.dataset.col));
     return;
@@ -1071,7 +1075,7 @@ function stopPointerDrawing(event = null) {
     return;
   }
 
-  if (patternPasteMode && event && (event.pointerType === "touch" || event.pointerType === "pen") && patternPastePendingTarget) {
+  if (patternPasteMode && event && isDirectPasteReleasePointer(event) && patternPastePendingTarget) {
     pastePatternAt(patternPastePendingTarget.row, patternPastePendingTarget.col);
   }
 
