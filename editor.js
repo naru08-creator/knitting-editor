@@ -29,8 +29,11 @@ let occupiedCells = new Map();
 let symbolsData = [];
 let undoStack = [];
 let redoStack = [];
+let shapeUndoStack = [];
+let shapeRedoStack = [];
 let imageCache = new Map();
 let disabledCells = new Set();
+let activeShapeBatch = null;
 
 function getCellKey(row, col) {
   return `${row}:${col}`;
@@ -65,11 +68,16 @@ function getGridOverlay() {
 function updateHistoryButtons() {
   document.getElementById("undoBtn").disabled = undoStack.length === 0;
   document.getElementById("redoBtn").disabled = redoStack.length === 0;
+  document.getElementById("shapeUndoBtn").disabled = shapeUndoStack.length === 0;
+  document.getElementById("shapeRedoBtn").disabled = shapeRedoStack.length === 0;
 }
 
 function resetHistory() {
   undoStack = [];
   redoStack = [];
+  shapeUndoStack = [];
+  shapeRedoStack = [];
+  activeShapeBatch = null;
   updateHistoryButtons();
 }
 
@@ -77,6 +85,51 @@ function pushHistoryEntry(entry) {
   undoStack.push(entry);
   redoStack = [];
   updateHistoryButtons();
+}
+
+function startShapeBatch() {
+  activeShapeBatch = {
+    changes: []
+  };
+}
+
+function recordShapeBatchChange(row, col, previousDisabled, nextDisabled, removedPlacement = null) {
+  if (!activeShapeBatch) return;
+
+  const key = getCellKey(row, col);
+  const existing = activeShapeBatch.changes.find((change) => change.key === key);
+  if (existing) {
+    existing.nextDisabled = nextDisabled;
+    if (removedPlacement) {
+      existing.removedPlacement = removedPlacement;
+    }
+    return;
+  }
+
+  activeShapeBatch.changes.push({
+    key,
+    row,
+    col,
+    previousDisabled,
+    nextDisabled,
+    removedPlacement
+  });
+}
+
+function finishShapeBatch() {
+  if (!activeShapeBatch) return;
+
+  const effectiveChanges = activeShapeBatch.changes.filter((change) => change.previousDisabled !== change.nextDisabled);
+  activeShapeBatch = null;
+
+  if (effectiveChanges.length === 0) {
+    return;
+  }
+
+  shapeUndoStack.push({ changes: effectiveChanges });
+  shapeRedoStack = [];
+  updateHistoryButtons();
+  updateDirtyState();
 }
 
 function snapshotPlacements() {
@@ -186,6 +239,7 @@ function setDisabledCell(row, col, disabled, options = {}) {
 
   const key = getCellKey(row, col);
   const isAlreadyDisabled = disabledCells.has(key);
+  let removedPlacement = null;
 
   if (disabled === isAlreadyDisabled) {
     return;
@@ -194,7 +248,7 @@ function setDisabledCell(row, col, disabled, options = {}) {
   if (disabled) {
     const occupiedId = occupiedCells.get(key);
     if (occupiedId) {
-      removePlacementById(occupiedId);
+      removedPlacement = removePlacementById(occupiedId, { recordHistory: false });
     }
     disabledCells.add(key);
   } else {
@@ -202,6 +256,10 @@ function setDisabledCell(row, col, disabled, options = {}) {
   }
 
   updateCellDisabledState(row, col);
+
+  if (options.recordBatch !== false) {
+    recordShapeBatchChange(row, col, isAlreadyDisabled, disabled, removedPlacement);
+  }
 
   if (options.recordHistory !== false) {
     updateDirtyState();
@@ -220,6 +278,46 @@ function applyShapeEdit(row, col) {
   targetCols.forEach((targetCol) => {
     setDisabledCell(row, targetCol, shouldDisable);
   });
+}
+
+function applyShapeHistoryChanges(changes, useNextState) {
+  changes.forEach((change) => {
+    const targetDisabled = useNextState ? change.nextDisabled : change.previousDisabled;
+
+    setDisabledCell(change.row, change.col, targetDisabled, {
+      recordHistory: false,
+      recordBatch: false
+    });
+
+    if (!targetDisabled && change.removedPlacement) {
+      restorePlacement(change.removedPlacement);
+    }
+  });
+  updateDirtyState();
+}
+
+function undoShapeAction() {
+  const entry = shapeUndoStack.pop();
+  if (!entry) {
+    updateHistoryButtons();
+    return;
+  }
+
+  applyShapeHistoryChanges(entry.changes, false);
+  shapeRedoStack.push(entry);
+  updateHistoryButtons();
+}
+
+function redoShapeAction() {
+  const entry = shapeRedoStack.pop();
+  if (!entry) {
+    updateHistoryButtons();
+    return;
+  }
+
+  applyShapeHistoryChanges(entry.changes, true);
+  shapeUndoStack.push(entry);
+  updateHistoryButtons();
 }
 
 function updateShapeControlsUI() {
@@ -608,6 +706,10 @@ function startPointerDrawing(event) {
   activePointerId = event.pointerId;
   lastPaintedCellKey = null;
 
+  if (shapeMode) {
+    startShapeBatch();
+  }
+
   event.preventDefault();
   paintCell(cell);
 }
@@ -634,6 +736,10 @@ function continuePointerDrawing(event) {
 function stopPointerDrawing(event = null) {
   if (event && activePointerId !== null && event.pointerId !== activePointerId) {
     return;
+  }
+
+  if (shapeMode) {
+    finishShapeBatch();
   }
 
   isPointerDrawing = false;
@@ -798,6 +904,9 @@ function setupShapeControls() {
   document.getElementById("shapeEnableBtn").addEventListener("click", () => {
     setShapeTool("enable");
   });
+
+  document.getElementById("shapeUndoBtn").addEventListener("click", undoShapeAction);
+  document.getElementById("shapeRedoBtn").addEventListener("click", redoShapeAction);
 
   document.getElementById("shapeMirrorToggle").addEventListener("change", (event) => {
     shapeMirrorEnabled = event.target.checked;

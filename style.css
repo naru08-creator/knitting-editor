@@ -123,6 +123,19 @@ button {
   background: #4d6f84;
 }
 
+.shape-btn.secondary {
+  background: #7f8f98;
+}
+
+.shape-btn.secondary:hover {
+  background: #6f7f88;
+}
+
+.shape-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .shape-toggle {
   display: inline-flex;
   align-items: center;
