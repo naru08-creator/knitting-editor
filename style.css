@@ -234,6 +234,13 @@ button {
   z-index: 1;
 }
 
+#pattern-preview-layer {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  z-index: 2;
+}
+
 #pattern-selection-box[hidden] {
   display: none;
 }
@@ -283,6 +290,21 @@ body.pattern-paste-mode .cell {
   background-position: center;
   background-size: contain;
   pointer-events: none;
+}
+
+.pattern-preview-symbol {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.45;
+  pointer-events: none;
+  filter: saturate(0.95);
+}
+
+.pattern-preview-symbol.invalid {
+  opacity: 0.35;
+  filter: sepia(0.7) saturate(1.6) hue-rotate(-18deg);
 }
 
 #rowNumbers {

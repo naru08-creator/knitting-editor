@@ -28,6 +28,7 @@ let patternPasteMode = false;
 let patternSelection = null;
 let patternSelectionStart = null;
 let clipboardPattern = null;
+let patternPreviewAnchor = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -72,6 +73,10 @@ function getGridOverlay() {
 
 function getPatternSelectionBox() {
   return document.getElementById("pattern-selection-box");
+}
+
+function getPatternPreviewLayer() {
+  return document.getElementById("pattern-preview-layer");
 }
 
 function updateHistoryButtons() {
@@ -215,8 +220,16 @@ function clearPatternSelection() {
   box.style.height = "";
 }
 
+function clearPatternPreview() {
+  patternPreviewAnchor = null;
+  getPatternPreviewLayer().innerHTML = "";
+}
+
 function updatePatternUiState() {
   document.body.classList.toggle("pattern-paste-mode", patternPasteMode);
+  if (!patternPasteMode) {
+    clearPatternPreview();
+  }
 }
 
 function deactivatePatternModes(options = {}) {
@@ -501,6 +514,27 @@ function pastePatternAt(row, col) {
   }
 }
 
+function canPlacePatternRecordAt(row, col, symbol) {
+  return Boolean(canPlaceSymbol(row, col, symbol));
+}
+
+function renderPatternPreviewAt(row, col) {
+  const previewLayer = getPatternPreviewLayer();
+  previewLayer.innerHTML = "";
+  patternPreviewAnchor = { row, col };
+
+  if (!clipboardPattern) {
+    return;
+  }
+
+  clipboardPattern.records.forEach((record) => {
+    const targetRow = row + record.rowOffset;
+    const targetCol = col + record.colOffset;
+    const invalid = !canPlacePatternRecordAt(targetRow, targetCol, record.symbol);
+    previewLayer.appendChild(createPatternPreviewElement(targetRow, targetCol, record.symbol, invalid));
+  });
+}
+
 function clearPlacements() {
   placements.forEach((placement) => {
     placement.element.remove();
@@ -643,6 +677,12 @@ function createSymbolElement(row, col, symbol) {
   element.style.backgroundImage = `url("symbols/${symbol.file}")`;
   element.setAttribute("aria-label", symbol.name || symbol.file);
 
+  return element;
+}
+
+function createPatternPreviewElement(row, col, symbol, invalid) {
+  const element = createSymbolElement(row, col, symbol);
+  element.className = `pattern-preview-symbol${invalid ? " invalid" : ""}`;
   return element;
 }
 
@@ -898,6 +938,10 @@ function startPointerDrawing(event) {
     renderPatternSelection();
   }
 
+  if (patternPasteMode) {
+    renderPatternPreviewAt(Number(cell.dataset.row), Number(cell.dataset.col));
+  }
+
   if (shapeMode) {
     startShapeBatch();
   }
@@ -907,6 +951,16 @@ function startPointerDrawing(event) {
 }
 
 function continuePointerDrawing(event) {
+  if (patternPasteMode && !isPointerDrawing) {
+    const hoverCell = getCellFromPoint(event.clientX, event.clientY);
+    if (hoverCell) {
+      renderPatternPreviewAt(Number(hoverCell.dataset.row), Number(hoverCell.dataset.col));
+    } else {
+      clearPatternPreview();
+    }
+    return;
+  }
+
   if (!isPointerDrawing || event.pointerId !== activePointerId) {
     return;
   }
