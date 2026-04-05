@@ -227,6 +227,10 @@ function clearPatternPreview() {
 
 function updatePatternUiState() {
   document.body.classList.toggle("pattern-paste-mode", patternPasteMode);
+  const touchPatternBtn = document.getElementById("touchPatternBtn");
+  if (touchPatternBtn) {
+    touchPatternBtn.classList.toggle("active", patternSelectMode || patternPasteMode);
+  }
   if (!patternPasteMode) {
     clearPatternPreview();
   }
@@ -1169,6 +1173,24 @@ function setupShapeControls() {
   updateShapeControlsUI();
 }
 
+function setupTouchPatternControls() {
+  const isTouchDevice = navigator.maxTouchPoints > 0;
+  document.body.classList.toggle("touch-device", isTouchDevice);
+
+  if (!isTouchDevice) {
+    return;
+  }
+
+  document.getElementById("touchPatternBtn").addEventListener("click", () => {
+    if (patternSelectMode || patternPasteMode) {
+      deactivatePatternModes();
+      return;
+    }
+
+    setPatternSelectMode(true);
+  });
+}
+
 async function loadSymbols() {
   const embedded = window.SYMBOLS_DATA;
 
@@ -1501,6 +1523,7 @@ function setupControls() {
 async function init() {
   setupControls();
   setupShapeControls();
+  setupTouchPatternControls();
   setupPaletteSettings();
   setupPaletteToggles();
   createGrid(currentRows, currentCols);

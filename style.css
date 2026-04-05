@@ -109,6 +109,14 @@ button {
   background: #8c5a5a;
 }
 
+.touch-only {
+  display: none;
+}
+
+body.touch-device .touch-only {
+  display: inline-block;
+}
+
 .shape-btn {
   background: #8ea9bb;
   color: white;
