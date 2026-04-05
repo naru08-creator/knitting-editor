@@ -689,6 +689,46 @@ async function drawChartToCanvas() {
   return canvas;
 }
 
+async function openProjectFromFile(file) {
+  const text = await file.text();
+  const project = JSON.parse(text);
+
+  if (!project || typeof project !== "object") {
+    throw new Error("JSONファイルの形式が正しくありません。");
+  }
+
+  if (!Number.isInteger(project.rows) || !Number.isInteger(project.cols)) {
+    throw new Error("行数または列数が不正です。");
+  }
+
+  const placementsFromFile = Array.isArray(project.placements) ? project.placements : [];
+  const normalizedPlacements = placementsFromFile
+    .filter((placement) => placement && placement.symbol)
+    .map((placement) => ({
+      id: `placement-${placementId++}`,
+      row: Number(placement.row),
+      col: Number(placement.col),
+      symbol: {
+        name: placement.symbol.name || placement.symbol.file,
+        file: placement.symbol.file,
+        width: Number(placement.symbol.width),
+        height: Number(placement.symbol.height)
+      }
+    }))
+    .filter((placement) => Number.isInteger(placement.row)
+      && Number.isInteger(placement.col)
+      && placement.symbol.file
+      && Number.isInteger(placement.symbol.width)
+      && Number.isInteger(placement.symbol.height));
+
+  document.getElementById("rows").value = String(project.rows);
+  document.getElementById("cols").value = String(project.cols);
+
+  createGrid(project.rows, project.cols, { preservePlacements: false, resetHistory: true });
+  restorePlacementList(normalizedPlacements);
+  resetHistory();
+}
+
 async function saveProject() {
   const project = serializeProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
@@ -746,6 +786,22 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+  document.getElementById("openBtn").addEventListener("click", () => {
+    document.getElementById("openFileInput").click();
+  });
+  document.getElementById("openFileInput").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      await openProjectFromFile(file);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "ファイルを読み込めませんでした。");
+    } finally {
+      event.target.value = "";
+    }
+  });
   document.getElementById("saveBtn").addEventListener("click", () => {
     saveProject().catch((error) => console.error(error));
   });
