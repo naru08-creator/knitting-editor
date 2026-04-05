@@ -240,15 +240,33 @@ button {
   width: 32px;
 }
 
+#printArea {
+  display: none;
+}
+
 @media print {
   body {
     background: white;
     padding: 0;
   }
 
-  #controls,
-  #undo-redo-controls,
-  .palette-group {
+  body.printing-chart > *:not(#printArea) {
     display: none !important;
+  }
+
+  body.printing-chart #printArea {
+    display: block;
+    padding: 24px;
+  }
+
+  body.printing-chart #printArea img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  @page {
+    margin: 12mm;
   }
 }

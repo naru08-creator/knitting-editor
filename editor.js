@@ -745,65 +745,39 @@ async function exportPng() {
 async function printChart() {
   const canvas = await drawChartToCanvas();
   const dataUrl = canvas.toDataURL("image/png");
-  const iframe = document.createElement("iframe");
+  const printArea = document.getElementById("printArea");
+  const image = document.createElement("img");
 
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
-  iframe.setAttribute("aria-hidden", "true");
+  image.src = dataUrl;
+  image.alt = "編み図";
 
-  document.body.appendChild(iframe);
+  printArea.innerHTML = "";
+  printArea.appendChild(image);
+  document.body.classList.add("printing-chart");
 
-  const printDocument = iframe.contentWindow?.document;
-  const printWindow = iframe.contentWindow;
-
-  if (!printDocument || !printWindow) {
-    iframe.remove();
-    window.print();
-    return;
-  }
-
-  printDocument.open();
-  printDocument.write(`<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>編み図 印刷</title>
-<style>
-  body { margin: 0; padding: 24px; display: flex; justify-content: center; align-items: flex-start; background: white; }
-  img { max-width: 100%; height: auto; display: block; }
-  @page { margin: 12mm; }
-</style>
-</head>
-<body>
-  <img id="print-image" src="${dataUrl}" alt="編み図">
-</body>
-</html>`);
-  printDocument.close();
-
-  const image = printDocument.getElementById("print-image");
-  const cleanup = () => setTimeout(() => iframe.remove(), 1000);
-
-  printWindow.onafterprint = cleanup;
-
-  const triggerPrint = () => {
-    printWindow.focus();
-    printWindow.print();
+  const cleanup = () => {
+    document.body.classList.remove("printing-chart");
+    printArea.innerHTML = "";
+    window.removeEventListener("afterprint", cleanup);
   };
 
-  if (image instanceof printWindow.HTMLImageElement) {
+  window.addEventListener("afterprint", cleanup);
+
+  await new Promise((resolve) => {
     if (image.complete) {
-      triggerPrint();
-    } else {
-      image.onload = triggerPrint;
-      image.onerror = triggerPrint;
+      resolve();
+      return;
     }
-  } else {
-    triggerPrint();
-  }
+
+    image.onload = () => resolve();
+    image.onerror = () => resolve();
+  });
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
 }
 
 function setupControls() {
