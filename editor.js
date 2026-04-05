@@ -29,6 +29,7 @@ let patternSelection = null;
 let patternSelectionStart = null;
 let clipboardPattern = null;
 let patternPreviewAnchor = null;
+let patternPastePendingTarget = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -263,6 +264,7 @@ function clearPatternSelection() {
 
 function clearPatternPreview() {
   patternPreviewAnchor = null;
+  patternPastePendingTarget = null;
   getPatternPreviewLayer().innerHTML = "";
 }
 
@@ -569,6 +571,7 @@ function renderPatternPreviewAt(row, col) {
   const previewLayer = getPatternPreviewLayer();
   previewLayer.innerHTML = "";
   patternPreviewAnchor = { row, col };
+  patternPastePendingTarget = { row, col };
 
   if (!clipboardPattern) {
     return;
@@ -1020,6 +1023,11 @@ function startPointerDrawing(event) {
   }
 
   event.preventDefault();
+
+  if (patternPasteMode && (event.pointerType === "touch" || event.pointerType === "pen")) {
+    return;
+  }
+
   paintCell(cell);
 }
 
@@ -1048,6 +1056,12 @@ function continuePointerDrawing(event) {
     return;
   }
 
+  if (patternPasteMode && (event.pointerType === "touch" || event.pointerType === "pen")) {
+    event.preventDefault();
+    renderPatternPreviewAt(Number(cell.dataset.row), Number(cell.dataset.col));
+    return;
+  }
+
   event.preventDefault();
   paintCell(cell);
 }
@@ -1055,6 +1069,10 @@ function continuePointerDrawing(event) {
 function stopPointerDrawing(event = null) {
   if (event && activePointerId !== null && event.pointerId !== activePointerId) {
     return;
+  }
+
+  if (patternPasteMode && event && (event.pointerType === "touch" || event.pointerType === "pen") && patternPastePendingTarget) {
+    pastePatternAt(patternPastePendingTarget.row, patternPastePendingTarget.col);
   }
 
   if (shapeMode) {
