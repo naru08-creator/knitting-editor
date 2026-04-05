@@ -321,6 +321,7 @@ function placeSymbol(row, col, symbol, options = {}) {
 
   if (options.recordHistory !== false) {
     pushHistoryEntry({ type: "place", placement: { ...record, cells: record.cells.map((cell) => ({ ...cell })), element: null } });
+    updateDirtyState();
   }
 
   return record;
@@ -349,6 +350,7 @@ function removePlacementById(id, options = {}) {
 
   if (options.recordHistory !== false) {
     pushHistoryEntry({ type: "remove", placement: snapshot });
+    updateDirtyState();
   }
 
   return snapshot;
@@ -387,6 +389,7 @@ function undoAction() {
 
   redoStack.push(entry);
   updateHistoryButtons();
+  updateDirtyState();
 }
 
 function redoAction() {
@@ -404,6 +407,7 @@ function redoAction() {
 
   undoStack.push(entry);
   updateHistoryButtons();
+  updateDirtyState();
 }
 
 function isEditableTarget(target) {
@@ -991,6 +995,8 @@ async function init() {
 }
 
 init();
+
+
 
 
 
