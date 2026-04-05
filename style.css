@@ -5,7 +5,11 @@
   padding: 20px;
   margin: 0;
   min-height: 100vh;
-  overflow-x: auto;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 html {
@@ -36,7 +40,7 @@ html {
 #editor-toolbar {
   justify-content: center;
   width: fit-content;
-  margin: 0 auto 14px auto;
+  margin: 0 auto 22px auto;
   flex-wrap: wrap;
 }
 
@@ -101,6 +105,18 @@ button {
 .ur-btn:active {
   transform: translateY(2px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+
+.ur-btn.primary-action {
+  background: #4f7594;
+  border: 2px solid rgba(255,255,255,0.82);
+  box-shadow: 0 0 0 1px rgba(73, 104, 130, 0.35), 0 3px 6px rgba(0,0,0,0.12);
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.ur-btn.primary-action:hover {
+  background: #5f86a6;
 }
 
 .ur-btn.eraser {
@@ -183,7 +199,7 @@ body.touch-device .touch-only {
 
 #settingsPanel {
   width: min(360px, calc(100% - 40px));
-  margin: 0 auto 20px auto;
+  margin: 0 auto 24px auto;
   background: rgba(255,255,255,0.94);
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
@@ -210,10 +226,66 @@ body.touch-device .touch-only {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 24px;
+  gap: 28px;
   margin: 0 auto;
-  width: fit-content;
+  width: min(1240px, 100%);
   max-width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#grid-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+#grid-viewport-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+#gridZoomLabel {
+  font-weight: 700;
+  color: #577187;
+  background: rgba(255,255,255,0.88);
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#grid-zoom-buttons {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zoom-btn {
+  min-width: 74px;
+}
+
+#grid-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: rgba(255,255,255,0.42);
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 1px rgba(124, 146, 162, 0.25);
+  padding: 24px;
+}
+
+#grid-stage {
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
 }
 
 #grid-wrapper {
@@ -221,8 +293,9 @@ body.touch-device .touch-only {
   justify-content: center;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 20px;
   max-width: 100%;
+  width: fit-content;
+  transform-origin: top left;
 }
 
 #grid-area {
@@ -360,6 +433,7 @@ body.pattern-paste-mode .cell {
   align-self: flex-start;
   max-width: 100%;
   box-sizing: border-box;
+  overflow: auto;
 }
 
 .palette-group {
@@ -448,12 +522,14 @@ body[data-palette-position="bottom"] #editor-layout,
 body[data-palette-position="top"] #editor-layout {
   flex-direction: column;
   align-items: center;
+  gap: 26px;
 }
 
 body[data-palette-position="bottom"] #palette-dock,
 body[data-palette-position="top"] #palette-dock {
   width: min(100%, 1080px);
   flex-direction: column;
+  max-height: 34vh;
 }
 
 body[data-palette-position="top"] #palette-dock {
@@ -468,8 +544,7 @@ body[data-palette-position="right"] #editor-layout {
 body[data-palette-position="left"] #palette-dock,
 body[data-palette-position="right"] #palette-dock {
   width: min(320px, 34vw);
-  max-height: calc(100vh - 240px);
-  overflow: auto;
+  max-height: 100%;
   flex-direction: column;
 }
 
@@ -501,6 +576,19 @@ body[data-palette-position="right"] .palette-content {
 
   #editor-layout {
     width: 100%;
+  }
+
+  #grid-viewport-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #gridZoomLabel {
+    text-align: center;
+  }
+
+  #grid-zoom-buttons {
+    justify-content: center;
   }
 
   body[data-palette-position="left"] #editor-layout,

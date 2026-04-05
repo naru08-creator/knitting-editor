@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <title>編み図エディタ</title>
-  <link rel="stylesheet" href="style.css?v=20260405-11">
+  <link rel="stylesheet" href="style.css?v=20260405-18">
 </head>
 <body>
   <div id="file-toolbar">
@@ -13,18 +13,18 @@
     <button id="saveBtn" class="ur-btn">JSON書き出し</button>
     <button id="pngBtn" class="ur-btn">画像保存</button>
     <button id="printBtn" class="ur-btn">印刷 / PDF保存</button>
+    <button id="settingsBtn" class="ur-btn icon-btn" type="button" aria-label="記号メニュー設定" aria-expanded="false">⚙</button>
   </div>
 
   <div id="editor-toolbar">
     <label class="toolbar-field">目数 <input id="cols" type="number" value="20"></label>
     <label class="toolbar-field">段数 <input id="rows" type="number" value="20"></label>
-    <button id="makeGrid" class="ur-btn">グリッドを作る</button>
+    <button id="makeGrid" class="ur-btn primary-action">グリッドを作る</button>
     <button id="undoBtn" class="ur-btn">戻す</button>
     <button id="redoBtn" class="ur-btn">やり直す</button>
     <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
     <button id="touchPatternBtn" class="ur-btn touch-only" type="button">複製モード</button>
     <button id="shapeModeBtn" class="ur-btn">形編集</button>
-    <button id="settingsBtn" class="ur-btn icon-btn" type="button" aria-label="記号メニュー設定" aria-expanded="false">⚙</button>
     <input id="openFileInput" type="file" accept="application/json,.json" hidden>
   </div>
 
@@ -52,18 +52,33 @@
   </div>
 
   <div id="editor-layout">
-    <div id="grid-wrapper">
-      <div id="grid-area">
-      <div id="grid-shell">
-        <div id="grid-cells"></div>
-        <div id="grid-overlay"></div>
-        <div id="pattern-preview-layer"></div>
-        <div id="pattern-selection-box" hidden></div>
+    <section id="grid-workspace">
+      <div id="grid-viewport-toolbar">
+        <span id="gridZoomLabel">表示 100%</span>
+        <div id="grid-zoom-buttons">
+          <button id="zoomOutBtn" class="ur-btn zoom-btn" type="button">縮小</button>
+          <button id="zoomResetBtn" class="ur-btn zoom-btn" type="button">100%</button>
+          <button id="zoomInBtn" class="ur-btn zoom-btn" type="button">拡大</button>
+        </div>
       </div>
-        <div id="rowNumbers"></div>
+
+      <div id="grid-viewport">
+        <div id="grid-stage">
+          <div id="grid-wrapper">
+            <div id="grid-area">
+              <div id="grid-shell">
+                <div id="grid-cells"></div>
+                <div id="grid-overlay"></div>
+                <div id="pattern-preview-layer"></div>
+                <div id="pattern-selection-box" hidden></div>
+              </div>
+              <div id="rowNumbers"></div>
+            </div>
+            <div id="colNumbers"></div>
+          </div>
+        </div>
       </div>
-      <div id="colNumbers"></div>
-    </div>
+    </section>
 
     <aside id="palette-dock" aria-label="記号メニュー">
       <div class="palette-group">
@@ -101,6 +116,6 @@
   <div id="printArea" aria-hidden="true"></div>
 
   <script src="data/symbols.js?v=20260404-3"></script>
-  <script src="editor.js?v=20260405-17"></script>
+  <script src="editor.js?v=20260405-18"></script>
 </body>
 </html>

@@ -10,6 +10,9 @@ const PENDING_PROJECT_KEY = "amizu-pending-project";
 const AUTO_SAVE_KEY = "amizu-auto-save";
 const PALETTE_POSITIONS = new Set(["auto", "top", "bottom", "left", "right"]);
 const SHAPE_TOOLS = new Set(["disable", "enable"]);
+const MIN_GRID_ZOOM = 0.6;
+const MAX_GRID_ZOOM = 2.4;
+const GRID_ZOOM_STEP = 0.2;
 
 let currentRows = 20;
 let currentCols = 20;
@@ -34,6 +37,7 @@ let patternPastePendingTarget = null;
 let currentProjectName = "amizu-chart.json";
 let currentFileHandle = null;
 let autoSaveTimer = null;
+let gridZoom = 1;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -75,6 +79,14 @@ function getGridCells() {
 
 function getGridOverlay() {
   return document.getElementById("grid-overlay");
+}
+
+function getGridViewport() {
+  return document.getElementById("grid-viewport");
+}
+
+function getGridStage() {
+  return document.getElementById("grid-stage");
 }
 
 function getPatternSelectionBox() {
@@ -668,6 +680,56 @@ function clearPlacements() {
   occupiedCells = new Map();
 }
 
+function clampGridZoom(value) {
+  return Math.min(MAX_GRID_ZOOM, Math.max(MIN_GRID_ZOOM, value));
+}
+
+function updateGridZoomUi() {
+  const zoomLabel = document.getElementById("gridZoomLabel");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
+  const zoomResetBtn = document.getElementById("zoomResetBtn");
+  const zoomInBtn = document.getElementById("zoomInBtn");
+
+  zoomLabel.textContent = `表示 ${Math.round(gridZoom * 100)}%`;
+  zoomOutBtn.disabled = gridZoom <= MIN_GRID_ZOOM;
+  zoomResetBtn.disabled = Math.abs(gridZoom - 1) < 0.001;
+  zoomInBtn.disabled = gridZoom >= MAX_GRID_ZOOM;
+}
+
+function refreshGridViewportSize() {
+  const gridWrapper = document.getElementById("grid-wrapper");
+  const gridStage = getGridStage();
+
+  if (!gridWrapper || !gridStage) {
+    return;
+  }
+
+  gridWrapper.style.transform = `scale(${gridZoom})`;
+  gridStage.style.width = `${gridWrapper.offsetWidth * gridZoom}px`;
+  gridStage.style.height = `${gridWrapper.offsetHeight * gridZoom}px`;
+  updateGridZoomUi();
+}
+
+function setGridZoom(nextZoom) {
+  const viewport = getGridViewport();
+  const clampedZoom = clampGridZoom(nextZoom);
+
+  if (!viewport || Math.abs(clampedZoom - gridZoom) < 0.001) {
+    gridZoom = clampedZoom;
+    refreshGridViewportSize();
+    return;
+  }
+
+  const contentCenterX = (viewport.scrollLeft + viewport.clientWidth / 2) / gridZoom;
+  const contentCenterY = (viewport.scrollTop + viewport.clientHeight / 2) / gridZoom;
+
+  gridZoom = clampedZoom;
+  refreshGridViewportSize();
+
+  viewport.scrollLeft = Math.max(0, contentCenterX * gridZoom - viewport.clientWidth / 2);
+  viewport.scrollTop = Math.max(0, contentCenterY * gridZoom - viewport.clientHeight / 2);
+}
+
 function buildNumberLabels(rows, cols) {
   const rowNumbers = document.getElementById("rowNumbers");
   rowNumbers.innerHTML = "";
@@ -750,6 +812,8 @@ function createGrid(rows, cols, options = {}) {
   if (options.resetHistory !== false) {
     resetHistory();
   }
+
+  refreshGridViewportSize();
 }
 
 function getPlacementCells(row, col, symbol) {
@@ -1694,7 +1758,17 @@ function setupControls() {
   document.getElementById("printBtn").addEventListener("click", () => {
     printChart().catch((error) => console.error(error));
   });
+  document.getElementById("zoomOutBtn").addEventListener("click", () => {
+    setGridZoom(gridZoom - GRID_ZOOM_STEP);
+  });
+  document.getElementById("zoomResetBtn").addEventListener("click", () => {
+    setGridZoom(1);
+  });
+  document.getElementById("zoomInBtn").addEventListener("click", () => {
+    setGridZoom(gridZoom + GRID_ZOOM_STEP);
+  });
   document.addEventListener("keydown", handleKeydown);
+  window.addEventListener("resize", refreshGridViewportSize);
   window.addEventListener("beforeunload", () => {
     if (hasUnsavedChanges()) {
       writeAutoSave();
