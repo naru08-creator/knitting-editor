@@ -152,6 +152,7 @@
 
   <script>
     const PENDING_PROJECT_KEY = "amizu-pending-project";
+    const AUTO_SAVE_KEY = "amizu-auto-save";
 
     function openEditor() {
       window.location.href = "editor.html";
@@ -159,6 +160,7 @@
 
     document.getElementById("newChartBtn").addEventListener("click", () => {
       sessionStorage.removeItem(PENDING_PROJECT_KEY);
+      localStorage.removeItem(AUTO_SAVE_KEY);
       openEditor();
     });
 

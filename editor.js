@@ -7,6 +7,7 @@ const LIGHT_GRID_COLOR = "#d0d0d0";
 const HEAVY_GRID_COLOR = "#999999";
 const PALETTE_POSITION_KEY = "amizu-palette-position";
 const PENDING_PROJECT_KEY = "amizu-pending-project";
+const AUTO_SAVE_KEY = "amizu-auto-save";
 const PALETTE_POSITIONS = new Set(["auto", "top", "bottom", "left", "right"]);
 const SHAPE_TOOLS = new Set(["disable", "enable"]);
 
@@ -32,6 +33,7 @@ let patternPreviewAnchor = null;
 let patternPastePendingTarget = null;
 let currentProjectName = "amizu-chart.json";
 let currentFileHandle = null;
+let autoSaveTimer = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -228,7 +230,12 @@ function getTimestampSuffix() {
 
 function updateDirtyState() {
   lastSavedSnapshot = lastSavedSnapshot || JSON.stringify(serializeProject());
-  document.body.dataset.dirty = String(JSON.stringify(serializeProject()) !== lastSavedSnapshot);
+  const currentSnapshot = JSON.stringify(serializeProject());
+  const isDirty = currentSnapshot !== lastSavedSnapshot;
+  document.body.dataset.dirty = String(isDirty);
+  if (isDirty) {
+    scheduleAutoSave();
+  }
 }
 
 function markSavedState() {
@@ -285,6 +292,31 @@ async function saveWithPicker(blob) {
   await writable.write(blob);
   await writable.close();
   return true;
+}
+
+function clearAutoSaveTimer() {
+  if (autoSaveTimer !== null) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = null;
+  }
+}
+
+function writeAutoSave() {
+  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(serializeProject()));
+  markSavedState();
+}
+
+function scheduleAutoSave() {
+  clearAutoSaveTimer();
+  autoSaveTimer = window.setTimeout(() => {
+    writeAutoSave();
+    autoSaveTimer = null;
+  }, 250);
+}
+
+function clearAutoSave() {
+  clearAutoSaveTimer();
+  localStorage.removeItem(AUTO_SAVE_KEY);
 }
 
 function clearSelection() {
@@ -1512,6 +1544,7 @@ function loadProject(project) {
   restorePlacementList(normalizedProject.placements);
   resetHistory();
   markSavedState();
+  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(serializeProject()));
 }
 
 async function openProjectFromFile(file) {
@@ -1539,6 +1572,21 @@ function loadPendingProjectFromSession() {
   }
 }
 
+function loadAutoSavedProject() {
+  const raw = localStorage.getItem(AUTO_SAVE_KEY);
+  if (!raw) return false;
+
+  try {
+    const project = JSON.parse(raw);
+    loadProject(project);
+    return true;
+  } catch (error) {
+    console.error(error);
+    localStorage.removeItem(AUTO_SAVE_KEY);
+    return false;
+  }
+}
+
 async function saveProject() {
   const project = serializeProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
@@ -1549,7 +1597,6 @@ async function saveProject() {
   if (!saved) {
     downloadBlob(blob, currentProjectName || `amizu-chart-${getTimestampSuffix()}.json`);
   }
-  markSavedState();
 }
 
 async function exportPng() {
@@ -1617,8 +1664,8 @@ function setupControls() {
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
   document.getElementById("homeBtn").addEventListener("click", () => {
-    if (hasUnsavedChanges() && !window.confirm("保存していない変更があります。トップページに戻りますか？")) {
-      return;
+    if (hasUnsavedChanges()) {
+      writeAutoSave();
     }
     window.location.href = "index.html";
   });
@@ -1648,6 +1695,11 @@ function setupControls() {
     printChart().catch((error) => console.error(error));
   });
   document.addEventListener("keydown", handleKeydown);
+  window.addEventListener("beforeunload", () => {
+    if (hasUnsavedChanges()) {
+      writeAutoSave();
+    }
+  });
 
   const gridCells = getGridCells();
   gridCells.addEventListener("pointerdown", startPointerDrawing);
@@ -1668,9 +1720,10 @@ async function init() {
   createGrid(currentRows, currentCols);
   markSavedState();
   const loadedPendingProject = loadPendingProjectFromSession();
+  const loadedAutoSavedProject = loadedPendingProject ? false : loadAutoSavedProject();
   await loadSymbols();
 
-  if (loadedPendingProject) {
+  if (loadedPendingProject || loadedAutoSavedProject) {
     clearSelection();
   }
 }
