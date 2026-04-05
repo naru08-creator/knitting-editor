@@ -745,14 +745,29 @@ async function exportPng() {
 async function printChart() {
   const canvas = await drawChartToCanvas();
   const dataUrl = canvas.toDataURL("image/png");
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  const iframe = document.createElement("iframe");
 
-  if (!printWindow) {
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.setAttribute("aria-hidden", "true");
+
+  document.body.appendChild(iframe);
+
+  const printDocument = iframe.contentWindow?.document;
+  const printWindow = iframe.contentWindow;
+
+  if (!printDocument || !printWindow) {
+    iframe.remove();
     window.print();
     return;
   }
 
-  printWindow.document.write(`<!DOCTYPE html>
+  printDocument.open();
+  printDocument.write(`<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -764,15 +779,31 @@ async function printChart() {
 </style>
 </head>
 <body>
-  <img src="${dataUrl}" alt="編み図">
-  <script>
-    window.addEventListener('load', () => {
-      window.print();
-    });
-  <\/script>
+  <img id="print-image" src="${dataUrl}" alt="編み図">
 </body>
 </html>`);
-  printWindow.document.close();
+  printDocument.close();
+
+  const image = printDocument.getElementById("print-image");
+  const cleanup = () => setTimeout(() => iframe.remove(), 1000);
+
+  printWindow.onafterprint = cleanup;
+
+  const triggerPrint = () => {
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  if (image instanceof printWindow.HTMLImageElement) {
+    if (image.complete) {
+      triggerPrint();
+    } else {
+      image.onload = triggerPrint;
+      image.onerror = triggerPrint;
+    }
+  } else {
+    triggerPrint();
+  }
 }
 
 function setupControls() {
