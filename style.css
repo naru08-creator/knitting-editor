@@ -109,6 +109,11 @@ button {
   background: #8c5a5a;
 }
 
+#patternFlipHBtn.active,
+#patternFlipVBtn.active {
+  background: #4f7b94;
+}
+
 .touch-only {
   display: none;
 }
@@ -298,6 +303,7 @@ body.pattern-paste-mode .cell {
   background-position: center;
   background-size: contain;
   pointer-events: none;
+  transform-origin: center center;
 }
 
 .pattern-preview-symbol {
@@ -308,6 +314,7 @@ body.pattern-paste-mode .cell {
   opacity: 0.45;
   pointer-events: none;
   filter: saturate(0.95);
+  transform-origin: center center;
 }
 
 .pattern-preview-symbol.invalid {
