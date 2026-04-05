@@ -23,6 +23,11 @@ let lastSavedSnapshot = "";
 let shapeMode = false;
 let shapeTool = "disable";
 let shapeMirrorEnabled = false;
+let patternSelectMode = false;
+let patternPasteMode = false;
+let patternSelection = null;
+let patternSelectionStart = null;
+let clipboardPattern = null;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -63,6 +68,10 @@ function getGridCells() {
 
 function getGridOverlay() {
   return document.getElementById("grid-overlay");
+}
+
+function getPatternSelectionBox() {
+  return document.getElementById("pattern-selection-box");
 }
 
 function updateHistoryButtons() {
@@ -195,7 +204,67 @@ function clearSelection() {
   });
 }
 
+function clearPatternSelection() {
+  patternSelection = null;
+  patternSelectionStart = null;
+  const box = getPatternSelectionBox();
+  box.hidden = true;
+  box.style.left = "";
+  box.style.top = "";
+  box.style.width = "";
+  box.style.height = "";
+}
+
+function updatePatternButtons() {
+  document.getElementById("patternSelectBtn").classList.toggle("active", patternSelectMode);
+  document.getElementById("patternPasteBtn").classList.toggle("active", patternPasteMode);
+  document.getElementById("patternCopyBtn").disabled = !patternSelection;
+  document.getElementById("patternPasteBtn").disabled = !clipboardPattern;
+}
+
+function deactivatePatternModes(options = {}) {
+  patternSelectMode = false;
+  patternPasteMode = false;
+  if (options.clearSelection !== false) {
+    clearPatternSelection();
+  }
+  updatePatternButtons();
+}
+
+function setPatternSelectMode(active) {
+  patternSelectMode = active;
+  patternPasteMode = false;
+  if (patternSelectMode) {
+    setShapeMode(false);
+    eraserMode = false;
+    selectedSymbol = null;
+    clearSelection();
+    document.getElementById("eraserBtn").classList.remove("active");
+  } else if (!active) {
+    patternSelectionStart = null;
+  }
+  updatePatternButtons();
+}
+
+function setPatternPasteMode(active) {
+  if (active && !clipboardPattern) {
+    return;
+  }
+
+  patternPasteMode = active;
+  patternSelectMode = false;
+  if (patternPasteMode) {
+    setShapeMode(false);
+    eraserMode = false;
+    selectedSymbol = null;
+    clearSelection();
+    document.getElementById("eraserBtn").classList.remove("active");
+  }
+  updatePatternButtons();
+}
+
 function setSelectedSymbol(symbol, element) {
+  deactivatePatternModes({ clearSelection: false });
   setShapeMode(false);
   eraserMode = false;
   document.getElementById("eraserBtn").classList.remove("active");
@@ -209,6 +278,7 @@ function setSelectedSymbol(symbol, element) {
 }
 
 function toggleEraser() {
+  deactivatePatternModes({ clearSelection: false });
   setShapeMode(false);
   eraserMode = !eraserMode;
   selectedSymbol = null;
@@ -330,6 +400,9 @@ function updateShapeControlsUI() {
 }
 
 function setShapeMode(active) {
+  if (active) {
+    deactivatePatternModes({ clearSelection: false });
+  }
   shapeMode = active;
   if (shapeMode) {
     eraserMode = false;
@@ -342,6 +415,93 @@ function setShapeTool(nextTool) {
   if (!SHAPE_TOOLS.has(nextTool)) return;
   shapeTool = nextTool;
   updateShapeControlsUI();
+}
+
+function normalizePatternSelection(startRow, startCol, endRow, endCol) {
+  return {
+    minRow: Math.min(startRow, endRow),
+    maxRow: Math.max(startRow, endRow),
+    minCol: Math.min(startCol, endCol),
+    maxCol: Math.max(startCol, endCol)
+  };
+}
+
+function renderPatternSelection() {
+  const box = getPatternSelectionBox();
+  if (!patternSelection) {
+    box.hidden = true;
+    return;
+  }
+
+  const left = (currentCols - patternSelection.maxCol) * CELL_SIZE + GRID_PADDING;
+  const top = (currentRows - patternSelection.maxRow) * CELL_SIZE + GRID_PADDING;
+  const width = (patternSelection.maxCol - patternSelection.minCol + 1) * CELL_SIZE;
+  const height = (patternSelection.maxRow - patternSelection.minRow + 1) * CELL_SIZE;
+
+  box.hidden = false;
+  box.style.left = `${left}px`;
+  box.style.top = `${top}px`;
+  box.style.width = `${width}px`;
+  box.style.height = `${height}px`;
+}
+
+function updatePatternSelection(cell) {
+  if (!patternSelectionStart) return;
+
+  const row = Number(cell.dataset.row);
+  const col = Number(cell.dataset.col);
+  patternSelection = normalizePatternSelection(patternSelectionStart.row, patternSelectionStart.col, row, col);
+  renderPatternSelection();
+  updatePatternButtons();
+}
+
+function copyPatternSelection() {
+  if (!patternSelection) return;
+
+  const records = Array.from(placements.values())
+    .filter((placement) => placement.cells.every((cell) =>
+      cell.row >= patternSelection.minRow
+      && cell.row <= patternSelection.maxRow
+      && cell.col >= patternSelection.minCol
+      && cell.col <= patternSelection.maxCol))
+    .map((placement) => ({
+      rowOffset: placement.row - patternSelection.minRow,
+      colOffset: placement.col - patternSelection.minCol,
+      symbol: placement.symbol
+    }));
+
+  if (records.length === 0) {
+    alert("選択範囲の中にコピーできる記号がありません。");
+    return;
+  }
+
+  clipboardPattern = {
+    width: patternSelection.maxCol - patternSelection.minCol + 1,
+    height: patternSelection.maxRow - patternSelection.minRow + 1,
+    records
+  };
+
+  updatePatternButtons();
+}
+
+function pastePatternAt(row, col) {
+  if (!clipboardPattern) return;
+
+  let pasted = 0;
+  let skipped = 0;
+
+  clipboardPattern.records.forEach((record) => {
+    const placed = placeSymbol(row + record.rowOffset, col + record.colOffset, record.symbol);
+    if (placed) {
+      pasted += 1;
+    } else {
+      skipped += 1;
+    }
+  });
+
+  if (skipped > 0) {
+    alert(`${pasted}個貼り付けました。${skipped}個は範囲外または配置済みのため貼り付けできませんでした。`);
+  }
 }
 
 function clearPlacements() {
@@ -421,6 +581,7 @@ function createGrid(rows, cols, options = {}) {
   currentRows = rows;
   currentCols = cols;
   clearPlacements();
+  clearPatternSelection();
   stopPointerDrawing();
   disabledCells = new Set();
 
@@ -657,6 +818,20 @@ function paintCell(cell) {
   const col = Number(cell.dataset.col);
   const cellKey = getCellKey(row, col);
 
+  if (patternSelectMode) {
+    updatePatternSelection(cell);
+    return;
+  }
+
+  if (patternPasteMode) {
+    if (cellKey === lastPaintedCellKey) {
+      return;
+    }
+    lastPaintedCellKey = cellKey;
+    pastePatternAt(row, col);
+    return;
+  }
+
   if (cellKey === lastPaintedCellKey) {
     return;
   }
@@ -688,7 +863,7 @@ function startPointerDrawing(event) {
     return;
   }
 
-  if (!shapeMode && !eraserMode && !selectedSymbol) {
+  if (!patternSelectMode && !patternPasteMode && !shapeMode && !eraserMode && !selectedSymbol) {
     return;
   }
 
@@ -705,6 +880,15 @@ function startPointerDrawing(event) {
   isPointerDrawing = true;
   activePointerId = event.pointerId;
   lastPaintedCellKey = null;
+
+  if (patternSelectMode) {
+    patternSelectionStart = {
+      row: Number(cell.dataset.row),
+      col: Number(cell.dataset.col)
+    };
+    patternSelection = normalizePatternSelection(patternSelectionStart.row, patternSelectionStart.col, patternSelectionStart.row, patternSelectionStart.col);
+    renderPatternSelection();
+  }
 
   if (shapeMode) {
     startShapeBatch();
@@ -740,6 +924,10 @@ function stopPointerDrawing(event = null) {
 
   if (shapeMode) {
     finishShapeBatch();
+  }
+
+  if (patternSelectMode) {
+    updatePatternButtons();
   }
 
   isPointerDrawing = false;
@@ -1202,6 +1390,15 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+  document.getElementById("patternSelectBtn").addEventListener("click", () => {
+    setPatternSelectMode(!patternSelectMode);
+  });
+  document.getElementById("patternCopyBtn").addEventListener("click", () => {
+    copyPatternSelection();
+  });
+  document.getElementById("patternPasteBtn").addEventListener("click", () => {
+    setPatternPasteMode(!patternPasteMode);
+  });
   document.getElementById("homeBtn").addEventListener("click", () => {
     if (hasUnsavedChanges() && !window.confirm("保存していない変更があります。トップページに戻りますか？")) {
       return;
@@ -1242,6 +1439,7 @@ function setupControls() {
   document.addEventListener("pointercancel", stopPointerDrawing);
 
   updateHistoryButtons();
+  updatePatternButtons();
 }
 
 async function init() {

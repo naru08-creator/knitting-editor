@@ -109,6 +109,11 @@ button {
   background: #8c5a5a;
 }
 
+#patternSelectBtn.active,
+#patternPasteBtn.active {
+  background: #4f7b94;
+}
+
 .shape-btn {
   background: #8ea9bb;
   color: white;
@@ -232,6 +237,19 @@ button {
   inset: 10px;
   pointer-events: none;
   z-index: 1;
+}
+
+#pattern-selection-box[hidden] {
+  display: none;
+}
+
+#pattern-selection-box {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+  border: 2px solid rgba(61, 112, 148, 0.95);
+  background: rgba(84, 138, 176, 0.14);
+  box-sizing: border-box;
 }
 
 .cell {
