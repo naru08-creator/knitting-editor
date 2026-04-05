@@ -41,6 +41,7 @@ button {
   display: flex;
   justify-content: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .ur-btn {
@@ -79,6 +80,7 @@ button {
   cursor: default;
   box-shadow: none;
 }
+
 .ur-btn.active {
   background: #8c5a5a;
 }
@@ -236,4 +238,17 @@ button {
 #palette-h3 img {
   height: 96px;
   width: 32px;
+}
+
+@media print {
+  body {
+    background: white;
+    padding: 0;
+  }
+
+  #controls,
+  #undo-redo-controls,
+  .palette-group {
+    display: none !important;
+  }
 }

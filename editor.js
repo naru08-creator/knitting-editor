@@ -1,5 +1,10 @@
 ﻿const CELL_SIZE = 24;
 const SYMBOL_PADDING = 3;
+const GRID_PADDING = 10;
+const NUMBER_GAP = 6;
+const NUMBER_FONT = "16px 'Noto Sans JP', sans-serif";
+const LIGHT_GRID_COLOR = "#d0d0d0";
+const HEAVY_GRID_COLOR = "#999999";
 
 let currentRows = 20;
 let currentCols = 20;
@@ -15,6 +20,7 @@ let occupiedCells = new Map();
 let symbolsData = [];
 let undoStack = [];
 let redoStack = [];
+let imageCache = new Map();
 
 function getCellKey(row, col) {
   return `${row}:${col}`;
@@ -63,6 +69,39 @@ function snapshotPlacements() {
     col: placement.col,
     symbol: placement.symbol
   }));
+}
+
+function serializeProject() {
+  return {
+    version: 1,
+    rows: currentRows,
+    cols: currentCols,
+    placements: snapshotPlacements().map((placement) => ({
+      row: placement.row,
+      col: placement.col,
+      symbol: {
+        name: placement.symbol.name,
+        file: placement.symbol.file,
+        width: placement.symbol.width,
+        height: placement.symbol.height
+      }
+    }))
+  };
+}
+
+function getTimestampSuffix() {
+  return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function clearSelection() {
@@ -548,6 +587,154 @@ async function loadSymbols() {
   }
 }
 
+function getSymbolImage(symbolFile) {
+  if (imageCache.has(symbolFile)) {
+    return imageCache.get(symbolFile);
+  }
+
+  const promise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`画像を読み込めませんでした: ${symbolFile}`));
+    image.src = `symbols/${symbolFile}`;
+  });
+
+  imageCache.set(symbolFile, promise);
+  return promise;
+}
+
+async function drawChartToCanvas() {
+  const gridWidth = currentCols * CELL_SIZE;
+  const gridHeight = currentRows * CELL_SIZE;
+  const bottomNumberHeight = CELL_SIZE + NUMBER_GAP + 8;
+  const rightNumberWidth = CELL_SIZE + NUMBER_GAP + 8;
+  const canvas = document.createElement("canvas");
+  const width = GRID_PADDING * 2 + gridWidth + rightNumberWidth;
+  const height = GRID_PADDING * 2 + gridHeight + bottomNumberHeight;
+
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  const gridLeft = GRID_PADDING;
+  const gridTop = GRID_PADDING;
+  const gridRight = gridLeft + gridWidth;
+  const gridBottom = gridTop + gridHeight;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  const placementsToDraw = snapshotPlacements();
+  const symbolImages = await Promise.all(
+    placementsToDraw.map(async (placement) => ({
+      placement,
+      image: await getSymbolImage(placement.symbol.file)
+    }))
+  );
+
+  for (const { placement, image } of symbolImages) {
+    const x = gridLeft + (currentCols - (placement.col + placement.symbol.width - 1)) * CELL_SIZE + SYMBOL_PADDING;
+    const y = gridTop + (currentRows - (placement.row + placement.symbol.height - 1)) * CELL_SIZE + SYMBOL_PADDING;
+    const w = placement.symbol.width * CELL_SIZE - SYMBOL_PADDING * 2;
+    const h = placement.symbol.height * CELL_SIZE - SYMBOL_PADDING * 2;
+    ctx.drawImage(image, x, y, w, h);
+  }
+
+  for (let row = 1; row <= currentRows; row++) {
+    const y = gridBottom - row * CELL_SIZE;
+    for (let col = 1; col <= currentCols; col++) {
+      const x = gridRight - col * CELL_SIZE;
+      ctx.strokeStyle = LIGHT_GRID_COLOR;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, CELL_SIZE, CELL_SIZE);
+    }
+  }
+
+  ctx.strokeStyle = HEAVY_GRID_COLOR;
+  ctx.lineWidth = 1;
+
+  for (let row = 5; row <= currentRows; row += 5) {
+    const y = gridBottom - row * CELL_SIZE + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(gridLeft, y);
+    ctx.lineTo(gridRight, y);
+    ctx.stroke();
+  }
+
+  for (let col = 6; col <= currentCols; col += 5) {
+    const x = gridRight - (col - 1) * CELL_SIZE + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, gridTop);
+    ctx.lineTo(x, gridBottom);
+    ctx.stroke();
+  }
+
+  ctx.font = NUMBER_FONT;
+  ctx.fillStyle = "#333333";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let col = currentCols; col >= 1; col--) {
+    const x = gridRight - (col - 0.5) * CELL_SIZE;
+    const y = gridBottom + NUMBER_GAP + CELL_SIZE / 2;
+    ctx.fillText(String(col), x, y);
+  }
+
+  for (let row = currentRows; row >= 1; row--) {
+    const x = gridRight + NUMBER_GAP + CELL_SIZE / 2;
+    const y = gridBottom - (row - 0.5) * CELL_SIZE;
+    ctx.fillText(String(row), x, y);
+  }
+
+  return canvas;
+}
+
+async function saveProject() {
+  const project = serializeProject();
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+  downloadBlob(blob, `amizu-chart-${getTimestampSuffix()}.json`);
+}
+
+async function exportPng() {
+  const canvas = await drawChartToCanvas();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) return;
+  downloadBlob(blob, `amizu-chart-${getTimestampSuffix()}.png`);
+}
+
+async function printChart() {
+  const canvas = await drawChartToCanvas();
+  const dataUrl = canvas.toDataURL("image/png");
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>編み図 印刷</title>
+<style>
+  body { margin: 0; padding: 24px; display: flex; justify-content: center; align-items: flex-start; background: white; }
+  img { max-width: 100%; height: auto; display: block; }
+  @page { margin: 12mm; }
+</style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="編み図">
+  <script>
+    window.addEventListener('load', () => {
+      window.print();
+    });
+  <\/script>
+</body>
+</html>`);
+  printWindow.document.close();
+}
+
 function setupControls() {
   document.getElementById("makeGrid").addEventListener("click", () => {
     const rows = parseInt(document.getElementById("rows").value, 10);
@@ -559,6 +746,15 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    saveProject().catch((error) => console.error(error));
+  });
+  document.getElementById("pngBtn").addEventListener("click", () => {
+    exportPng().catch((error) => console.error(error));
+  });
+  document.getElementById("printBtn").addEventListener("click", () => {
+    printChart().catch((error) => console.error(error));
+  });
   document.addEventListener("keydown", handleKeydown);
 
   const gridCells = getGridCells();
