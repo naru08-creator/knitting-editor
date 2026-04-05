@@ -215,11 +215,8 @@ function clearPatternSelection() {
   box.style.height = "";
 }
 
-function updatePatternButtons() {
-  document.getElementById("patternSelectBtn").classList.toggle("active", patternSelectMode);
-  document.getElementById("patternPasteBtn").classList.toggle("active", patternPasteMode);
-  document.getElementById("patternCopyBtn").disabled = !patternSelection;
-  document.getElementById("patternPasteBtn").disabled = !clipboardPattern;
+function updatePatternUiState() {
+  document.body.classList.toggle("pattern-paste-mode", patternPasteMode);
 }
 
 function deactivatePatternModes(options = {}) {
@@ -228,7 +225,7 @@ function deactivatePatternModes(options = {}) {
   if (options.clearSelection !== false) {
     clearPatternSelection();
   }
-  updatePatternButtons();
+  updatePatternUiState();
 }
 
 function setPatternSelectMode(active) {
@@ -243,7 +240,7 @@ function setPatternSelectMode(active) {
   } else if (!active) {
     patternSelectionStart = null;
   }
-  updatePatternButtons();
+  updatePatternUiState();
 }
 
 function setPatternPasteMode(active) {
@@ -260,7 +257,7 @@ function setPatternPasteMode(active) {
     clearSelection();
     document.getElementById("eraserBtn").classList.remove("active");
   }
-  updatePatternButtons();
+  updatePatternUiState();
 }
 
 function setSelectedSymbol(symbol, element) {
@@ -452,7 +449,7 @@ function updatePatternSelection(cell) {
   const col = Number(cell.dataset.col);
   patternSelection = normalizePatternSelection(patternSelectionStart.row, patternSelectionStart.col, row, col);
   renderPatternSelection();
-  updatePatternButtons();
+  updatePatternUiState();
 }
 
 function copyPatternSelection() {
@@ -481,7 +478,7 @@ function copyPatternSelection() {
     records
   };
 
-  updatePatternButtons();
+  setPatternPasteMode(true);
 }
 
 function pastePatternAt(row, col) {
@@ -778,6 +775,11 @@ function isEditableTarget(target) {
 }
 
 function handleKeydown(event) {
+  if (event.key === "Escape") {
+    deactivatePatternModes();
+    return;
+  }
+
   if (!(event.ctrlKey || event.metaKey) || isEditableTarget(event.target)) {
     return;
   }
@@ -863,6 +865,12 @@ function startPointerDrawing(event) {
     return;
   }
 
+  const isPatternShortcut = event.ctrlKey && event.altKey;
+
+  if (isPatternShortcut) {
+    setPatternSelectMode(true);
+  }
+
   if (!patternSelectMode && !patternPasteMode && !shapeMode && !eraserMode && !selectedSymbol) {
     return;
   }
@@ -927,7 +935,10 @@ function stopPointerDrawing(event = null) {
   }
 
   if (patternSelectMode) {
-    updatePatternButtons();
+    copyPatternSelection();
+    patternSelectMode = false;
+    patternSelectionStart = null;
+    updatePatternUiState();
   }
 
   isPointerDrawing = false;
@@ -1390,15 +1401,6 @@ function setupControls() {
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
-  document.getElementById("patternSelectBtn").addEventListener("click", () => {
-    setPatternSelectMode(!patternSelectMode);
-  });
-  document.getElementById("patternCopyBtn").addEventListener("click", () => {
-    copyPatternSelection();
-  });
-  document.getElementById("patternPasteBtn").addEventListener("click", () => {
-    setPatternPasteMode(!patternPasteMode);
-  });
   document.getElementById("homeBtn").addEventListener("click", () => {
     if (hasUnsavedChanges() && !window.confirm("保存していない変更があります。トップページに戻りますか？")) {
       return;
@@ -1439,7 +1441,7 @@ function setupControls() {
   document.addEventListener("pointercancel", stopPointerDrawing);
 
   updateHistoryButtons();
-  updatePatternButtons();
+  updatePatternUiState();
 }
 
 async function init() {
@@ -1458,6 +1460,7 @@ async function init() {
 }
 
 init();
+
 
 
 

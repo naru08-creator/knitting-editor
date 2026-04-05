@@ -109,11 +109,6 @@ button {
   background: #8c5a5a;
 }
 
-#patternSelectBtn.active,
-#patternPasteBtn.active {
-  background: #4f7b94;
-}
-
 .shape-btn {
   background: #8ea9bb;
   color: white;
@@ -272,6 +267,14 @@ body.shape-mode #grid-shell {
 
 body.shape-mode .cell {
   cursor: crosshair;
+}
+
+body.pattern-paste-mode #grid-shell {
+  box-shadow: 0 0 0 3px rgba(61, 112, 148, 0.2), 0 2px 4px rgba(0,0,0,0.05);
+}
+
+body.pattern-paste-mode .cell {
+  cursor: copy;
 }
 
 .placed-symbol {
