@@ -18,6 +18,7 @@ let isPointerDrawing = false;
 let activePointerId = null;
 let lastPaintedCellKey = null;
 let palettePositionPreference = "auto";
+let lastSavedSnapshot = "";
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -95,6 +96,20 @@ function serializeProject() {
 
 function getTimestampSuffix() {
   return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function updateDirtyState() {
+  lastSavedSnapshot = lastSavedSnapshot || JSON.stringify(serializeProject());
+  document.body.dataset.dirty = String(JSON.stringify(serializeProject()) !== lastSavedSnapshot);
+}
+
+function markSavedState() {
+  lastSavedSnapshot = JSON.stringify(serializeProject());
+  document.body.dataset.dirty = "false";
+}
+
+function hasUnsavedChanges() {
+  return document.body.dataset.dirty === "true";
 }
 
 function downloadBlob(blob, filename) {
@@ -909,12 +924,22 @@ function setupControls() {
     const rows = parseInt(document.getElementById("rows").value, 10);
     const cols = parseInt(document.getElementById("cols").value, 10);
 
+    const sizeChanged = rows !== currentRows || cols !== currentCols;
     createGrid(rows, cols, { preservePlacements: true, resetHistory: false });
+    if (sizeChanged) {
+      updateDirtyState();
+    }
   });
 
   document.getElementById("undoBtn").addEventListener("click", undoAction);
   document.getElementById("redoBtn").addEventListener("click", redoAction);
   document.getElementById("eraserBtn").addEventListener("click", toggleEraser);
+  document.getElementById("homeBtn").addEventListener("click", () => {
+    if (hasUnsavedChanges() && !window.confirm("保存していない変更があります。トップページに戻りますか？")) {
+      return;
+    }
+    window.location.href = "index.html";
+  });
   document.getElementById("openBtn").addEventListener("click", () => {
     document.getElementById("openFileInput").click();
   });
@@ -956,6 +981,7 @@ async function init() {
   setupPaletteSettings();
   setupPaletteToggles();
   createGrid(currentRows, currentCols);
+  markSavedState();
   const loadedPendingProject = loadPendingProjectFromSession();
   await loadSymbols();
 
@@ -965,3 +991,6 @@ async function init() {
 }
 
 init();
+
+
+
