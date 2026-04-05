@@ -55,6 +55,19 @@ button {
   flex-wrap: wrap;
 }
 
+#shapeControls[hidden] {
+  display: none;
+}
+
+#shapeControls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
 .ur-btn {
   background: #6f8fa6;
   color: white;
@@ -94,6 +107,34 @@ button {
 
 .ur-btn.active {
   background: #8c5a5a;
+}
+
+.shape-btn {
+  background: #8ea9bb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.shape-btn.active {
+  background: #4d6f84;
+}
+
+.shape-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.88);
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.shape-toggle input {
+  width: auto;
 }
 
 .icon-btn {
@@ -186,6 +227,20 @@ button {
   box-sizing: border-box;
   background: transparent;
   cursor: pointer;
+}
+
+.cell.disabled {
+  background:
+    linear-gradient(135deg, transparent 42%, rgba(117, 134, 145, 0.18) 42%, rgba(117, 134, 145, 0.18) 58%, transparent 58%),
+    rgba(151, 165, 175, 0.18);
+}
+
+body.shape-mode #grid-shell {
+  box-shadow: 0 0 0 3px rgba(84, 116, 138, 0.22), 0 2px 4px rgba(0,0,0,0.05);
+}
+
+body.shape-mode .cell {
+  cursor: crosshair;
 }
 
 .placed-symbol {

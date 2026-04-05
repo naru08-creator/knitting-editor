@@ -8,6 +8,7 @@ const HEAVY_GRID_COLOR = "#999999";
 const PALETTE_POSITION_KEY = "amizu-palette-position";
 const PENDING_PROJECT_KEY = "amizu-pending-project";
 const PALETTE_POSITIONS = new Set(["auto", "top", "bottom", "left", "right"]);
+const SHAPE_TOOLS = new Set(["disable", "enable"]);
 
 let currentRows = 20;
 let currentCols = 20;
@@ -19,6 +20,9 @@ let activePointerId = null;
 let lastPaintedCellKey = null;
 let palettePositionPreference = "auto";
 let lastSavedSnapshot = "";
+let shapeMode = false;
+let shapeTool = "disable";
+let shapeMirrorEnabled = false;
 
 const placements = new Map();
 let occupiedCells = new Map();
@@ -26,9 +30,17 @@ let symbolsData = [];
 let undoStack = [];
 let redoStack = [];
 let imageCache = new Map();
+let disabledCells = new Set();
 
 function getCellKey(row, col) {
   return `${row}:${col}`;
+}
+
+function snapshotDisabledCells() {
+  return Array.from(disabledCells).map((key) => {
+    const [row, col] = key.split(":").map(Number);
+    return { row, col };
+  });
 }
 
 function getPaletteId(symbol) {
@@ -81,6 +93,7 @@ function serializeProject() {
     version: 1,
     rows: currentRows,
     cols: currentCols,
+    disabledCells: snapshotDisabledCells(),
     placements: snapshotPlacements().map((placement) => ({
       row: placement.row,
       col: placement.col,
@@ -130,6 +143,7 @@ function clearSelection() {
 }
 
 function setSelectedSymbol(symbol, element) {
+  setShapeMode(false);
   eraserMode = false;
   document.getElementById("eraserBtn").classList.remove("active");
 
@@ -142,6 +156,7 @@ function setSelectedSymbol(symbol, element) {
 }
 
 function toggleEraser() {
+  setShapeMode(false);
   eraserMode = !eraserMode;
   selectedSymbol = null;
   clearSelection();
@@ -153,6 +168,82 @@ function applyBaseBorder(cell, rowNumber, colNumber) {
 
   if (colNumber > 1 && (colNumber - 1) % 5 === 0) cell.style.borderRight = "1px solid #999";
   if (rowNumber % 5 === 0) cell.style.borderTop = "1px solid #999";
+}
+
+function getCellElement(row, col) {
+  return document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+}
+
+function updateCellDisabledState(row, col) {
+  const cell = getCellElement(row, col);
+  if (!cell) return;
+
+  cell.classList.toggle("disabled", disabledCells.has(getCellKey(row, col)));
+}
+
+function setDisabledCell(row, col, disabled, options = {}) {
+  if (row < 1 || row > currentRows || col < 1 || col > currentCols) return;
+
+  const key = getCellKey(row, col);
+  const isAlreadyDisabled = disabledCells.has(key);
+
+  if (disabled === isAlreadyDisabled) {
+    return;
+  }
+
+  if (disabled) {
+    const occupiedId = occupiedCells.get(key);
+    if (occupiedId) {
+      removePlacementById(occupiedId);
+    }
+    disabledCells.add(key);
+  } else {
+    disabledCells.delete(key);
+  }
+
+  updateCellDisabledState(row, col);
+
+  if (options.recordHistory !== false) {
+    updateDirtyState();
+  }
+}
+
+function getMirroredCols(col) {
+  const mirroredCol = currentCols - col + 1;
+  return mirroredCol === col ? [col] : [col, mirroredCol];
+}
+
+function applyShapeEdit(row, col) {
+  const targetCols = shapeMirrorEnabled ? getMirroredCols(col) : [col];
+  const shouldDisable = shapeTool === "disable";
+
+  targetCols.forEach((targetCol) => {
+    setDisabledCell(row, targetCol, shouldDisable);
+  });
+}
+
+function updateShapeControlsUI() {
+  document.body.classList.toggle("shape-mode", shapeMode);
+  document.getElementById("shapeModeBtn").classList.toggle("active", shapeMode);
+  document.getElementById("shapeControls").hidden = !shapeMode;
+  document.getElementById("shapeDisableBtn").classList.toggle("active", shapeTool === "disable");
+  document.getElementById("shapeEnableBtn").classList.toggle("active", shapeTool === "enable");
+  document.getElementById("shapeMirrorToggle").checked = shapeMirrorEnabled;
+}
+
+function setShapeMode(active) {
+  shapeMode = active;
+  if (shapeMode) {
+    eraserMode = false;
+    document.getElementById("eraserBtn").classList.remove("active");
+  }
+  updateShapeControlsUI();
+}
+
+function setShapeTool(nextTool) {
+  if (!SHAPE_TOOLS.has(nextTool)) return;
+  shapeTool = nextTool;
+  updateShapeControlsUI();
 }
 
 function clearPlacements() {
@@ -210,6 +301,7 @@ function buildGridShell(rows, cols) {
       cell.dataset.col = String(colNumber);
 
       applyBaseBorder(cell, rowNumber, colNumber);
+      cell.classList.toggle("disabled", disabledCells.has(getCellKey(rowNumber, colNumber)));
       gridCells.appendChild(cell);
     }
   }
@@ -226,14 +318,19 @@ function restorePlacementList(records) {
 
 function createGrid(rows, cols, options = {}) {
   const preservedPlacements = options.preservePlacements ? snapshotPlacements() : [];
+  const preservedDisabledCells = options.preserveDisabledCells ? snapshotDisabledCells() : [];
 
   currentRows = rows;
   currentCols = cols;
   clearPlacements();
   stopPointerDrawing();
+  disabledCells = new Set();
 
   buildGridShell(rows, cols);
   buildNumberLabels(rows, cols);
+  preservedDisabledCells.forEach(({ row, col }) => {
+    setDisabledCell(row, col, true, { recordHistory: false });
+  });
   restorePlacementList(preservedPlacements);
 
   if (options.resetHistory !== false) {
@@ -266,7 +363,8 @@ function canPlaceSymbol(row, col, symbol) {
   if (!cells) return null;
 
   for (const cell of cells) {
-    if (occupiedCells.has(getCellKey(cell.row, cell.col))) {
+    const key = getCellKey(cell.row, cell.col);
+    if (disabledCells.has(key) || occupiedCells.has(key)) {
       return null;
     }
   }
@@ -359,8 +457,11 @@ function removePlacementById(id, options = {}) {
 function restorePlacement(record) {
   if (!record || placements.has(record.id)) return;
 
-  const occupied = record.cells.some((cell) => occupiedCells.has(getCellKey(cell.row, cell.col)));
-  if (occupied) return;
+  const blocked = record.cells.some((cell) => {
+    const key = getCellKey(cell.row, cell.col);
+    return disabledCells.has(key) || occupiedCells.has(key);
+  });
+  if (blocked) return;
 
   const restored = {
     id: record.id,
@@ -463,6 +564,11 @@ function paintCell(cell) {
   }
 
   lastPaintedCellKey = cellKey;
+  if (shapeMode) {
+    applyShapeEdit(row, col);
+    return;
+  }
+
   const occupiedId = occupiedCells.get(cellKey);
 
   if (eraserMode) {
@@ -484,7 +590,7 @@ function startPointerDrawing(event) {
     return;
   }
 
-  if (!eraserMode && !selectedSymbol) {
+  if (!shapeMode && !eraserMode && !selectedSymbol) {
     return;
   }
 
@@ -680,6 +786,27 @@ function setupPaletteSettings() {
   document.addEventListener("click", handleDocumentClick);
 }
 
+function setupShapeControls() {
+  document.getElementById("shapeModeBtn").addEventListener("click", () => {
+    setShapeMode(!shapeMode);
+  });
+
+  document.getElementById("shapeDisableBtn").addEventListener("click", () => {
+    setShapeTool("disable");
+  });
+
+  document.getElementById("shapeEnableBtn").addEventListener("click", () => {
+    setShapeTool("enable");
+  });
+
+  document.getElementById("shapeMirrorToggle").addEventListener("change", (event) => {
+    shapeMirrorEnabled = event.target.checked;
+    updateShapeControlsUI();
+  });
+
+  updateShapeControlsUI();
+}
+
 async function loadSymbols() {
   const embedded = window.SYMBOLS_DATA;
 
@@ -736,6 +863,13 @@ async function drawChartToCanvas() {
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
+
+  snapshotDisabledCells().forEach(({ row, col }) => {
+    const x = gridRight - col * CELL_SIZE;
+    const y = gridBottom - row * CELL_SIZE;
+    ctx.fillStyle = "#e1e7eb";
+    ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+  });
 
   const placementsToDraw = snapshotPlacements();
   const symbolImages = await Promise.all(
@@ -812,6 +946,7 @@ function normalizeProject(project) {
   }
 
   const placementsFromFile = Array.isArray(project.placements) ? project.placements : [];
+  const disabledFromFile = Array.isArray(project.disabledCells) ? project.disabledCells : [];
   const normalizedPlacements = placementsFromFile
     .filter((placement) => placement && placement.symbol)
     .map((placement) => ({
@@ -830,10 +965,17 @@ function normalizeProject(project) {
       && placement.symbol.file
       && Number.isInteger(placement.symbol.width)
       && Number.isInteger(placement.symbol.height));
+  const normalizedDisabledCells = disabledFromFile
+    .map((cell) => ({
+      row: Number(cell?.row),
+      col: Number(cell?.col)
+    }))
+    .filter((cell) => Number.isInteger(cell.row) && Number.isInteger(cell.col));
 
   return {
     rows: project.rows,
     cols: project.cols,
+    disabledCells: normalizedDisabledCells,
     placements: normalizedPlacements
   };
 }
@@ -844,9 +986,17 @@ function loadProject(project) {
   document.getElementById("rows").value = String(normalizedProject.rows);
   document.getElementById("cols").value = String(normalizedProject.cols);
 
-  createGrid(normalizedProject.rows, normalizedProject.cols, { preservePlacements: false, resetHistory: true });
+  createGrid(normalizedProject.rows, normalizedProject.cols, {
+    preservePlacements: false,
+    preserveDisabledCells: false,
+    resetHistory: true
+  });
+  normalizedProject.disabledCells.forEach(({ row, col }) => {
+    setDisabledCell(row, col, true, { recordHistory: false });
+  });
   restorePlacementList(normalizedProject.placements);
   resetHistory();
+  markSavedState();
 }
 
 async function openProjectFromFile(file) {
@@ -876,6 +1026,7 @@ async function saveProject() {
   const project = serializeProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
   downloadBlob(blob, `amizu-chart-${getTimestampSuffix()}.json`);
+  markSavedState();
 }
 
 async function exportPng() {
@@ -929,7 +1080,11 @@ function setupControls() {
     const cols = parseInt(document.getElementById("cols").value, 10);
 
     const sizeChanged = rows !== currentRows || cols !== currentCols;
-    createGrid(rows, cols, { preservePlacements: true, resetHistory: false });
+    createGrid(rows, cols, {
+      preservePlacements: true,
+      preserveDisabledCells: true,
+      resetHistory: false
+    });
     if (sizeChanged) {
       updateDirtyState();
     }
@@ -982,6 +1137,7 @@ function setupControls() {
 
 async function init() {
   setupControls();
+  setupShapeControls();
   setupPaletteSettings();
   setupPaletteToggles();
   createGrid(currentRows, currentCols);
@@ -995,6 +1151,7 @@ async function init() {
 }
 
 init();
+
 
 
 
