@@ -7,23 +7,23 @@
   <link rel="stylesheet" href="style.css?v=20260405-11">
 </head>
 <body>
-  <div id="controls">
-    目数 <input id="cols" type="number" value="20">
-    段数 <input id="rows" type="number" value="20">
-    <button id="makeGrid">グリッドを作る</button>
+  <div id="file-toolbar">
+    <button id="homeBtn" class="ur-btn">トップへ戻る</button>
+    <button id="openBtn" class="ur-btn">開く</button>
+    <button id="saveBtn" class="ur-btn">JSON書き出し</button>
+    <button id="pngBtn" class="ur-btn">画像保存</button>
+    <button id="printBtn" class="ur-btn">印刷 / PDF保存</button>
   </div>
 
-  <div id="undo-redo-controls">
-    <button id="undoBtn" class="ur-btn">Undo</button>
-    <button id="redoBtn" class="ur-btn">Redo</button>
+  <div id="editor-toolbar">
+    <label class="toolbar-field">目数 <input id="cols" type="number" value="20"></label>
+    <label class="toolbar-field">段数 <input id="rows" type="number" value="20"></label>
+    <button id="makeGrid" class="ur-btn">グリッドを作る</button>
+    <button id="undoBtn" class="ur-btn">戻す</button>
+    <button id="redoBtn" class="ur-btn">やり直す</button>
     <button id="eraserBtn" class="ur-btn eraser">消しゴム</button>
     <button id="touchPatternBtn" class="ur-btn touch-only" type="button">複製モード</button>
     <button id="shapeModeBtn" class="ur-btn">形編集</button>
-    <button id="homeBtn" class="ur-btn">トップページへ戻る</button>
-    <button id="openBtn" class="ur-btn">開く</button>
-    <button id="saveBtn" class="ur-btn">JSON書き出し</button>
-    <button id="pngBtn" class="ur-btn">画像</button>
-    <button id="printBtn" class="ur-btn">印刷 / PDF</button>
     <button id="settingsBtn" class="ur-btn icon-btn" type="button" aria-label="記号メニュー設定" aria-expanded="false">⚙</button>
     <input id="openFileInput" type="file" accept="application/json,.json" hidden>
   </div>

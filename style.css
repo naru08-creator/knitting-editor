@@ -13,7 +13,8 @@ html {
   text-size-adjust: 100%;
 }
 
-#controls {
+#file-toolbar,
+#editor-toolbar {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -21,9 +22,29 @@ html {
   padding: 12px 16px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  width: fit-content;
   max-width: 100%;
-  margin: 0 auto 20px auto;
+  margin-bottom: 16px;
+}
+
+#file-toolbar {
+  justify-content: flex-start;
+  width: min(1120px, 100%);
+  margin: 0 auto 16px auto;
+  flex-wrap: wrap;
+}
+
+#editor-toolbar {
+  justify-content: center;
+  width: fit-content;
+  margin: 0 auto 14px auto;
+  flex-wrap: wrap;
+}
+
+.toolbar-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
 input,
@@ -44,15 +65,6 @@ button {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-}
-
-#undo-redo-controls {
-  text-align: center;
-  margin-bottom: 14px;
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
 #shapeControls[hidden] {
@@ -107,11 +119,6 @@ button {
 
 .ur-btn.active {
   background: #8c5a5a;
-}
-
-#patternFlipHBtn.active,
-#patternFlipVBtn.active {
-  background: #4f7b94;
 }
 
 .touch-only {
@@ -486,7 +493,8 @@ body[data-palette-position="right"] .palette-content {
     padding: 14px;
   }
 
-  #controls {
+  #file-toolbar,
+  #editor-toolbar {
     flex-wrap: wrap;
     justify-content: center;
   }
