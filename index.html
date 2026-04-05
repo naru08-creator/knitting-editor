@@ -140,6 +140,11 @@
         <span>まっさらなグリッドから編み図を作り始めます。</span>
       </button>
 
+      <button id="resumeChartBtn" class="action-card secondary" type="button">
+        <strong>前回の続きから</strong>
+        <span>ブラウザ内に自動保存された編み図の続きを開きます。</span>
+      </button>
+
       <button id="openChartBtn" class="action-card secondary" type="button">
         <strong>保存データを開く</strong>
         <span>保存した JSON を読み込んで、エディタで続きから編集します。</span>
@@ -164,6 +169,10 @@
       openEditor();
     });
 
+    document.getElementById("resumeChartBtn").addEventListener("click", () => {
+      openEditor();
+    });
+
     document.getElementById("openChartBtn").addEventListener("click", () => {
       document.getElementById("homeOpenFileInput").click();
     });
@@ -184,6 +193,13 @@
         event.target.value = "";
       }
     });
+
+    const resumeButton = document.getElementById("resumeChartBtn");
+    if (!localStorage.getItem(AUTO_SAVE_KEY)) {
+      resumeButton.disabled = true;
+      resumeButton.style.opacity = "0.5";
+      resumeButton.style.cursor = "default";
+    }
   </script>
 </body>
 </html>
